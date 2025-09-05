@@ -1,0 +1,5 @@
+*.pyc
+*.log
+*.xml
+*.iml
+.venv

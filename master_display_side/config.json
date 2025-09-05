@@ -1,0 +1,222 @@
+{
+    "runtime_settings": {
+        "ai_LPF_boxcar_length" : 10,
+        "error_stack_max_len" : 20,
+        "enable_verbose_logging" : false,
+        "poll_buffer_period_ms" : 500,
+        "socket_timeout_s" : 3
+    },
+
+    "signals": [
+        {
+            "name": "DPT 1",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 24,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 200,
+            "showOnGUI": true
+        },
+        {
+            "name": "SPT 1",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 25,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 97.0,
+            "engineeringUnitsHighAmount" : 200.0,
+            "showOnGUI": true
+        },
+        {
+            "name": "MAT 1",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 26,
+            "engineeringUnits" : "Amps",
+            "engineeringUnitsLowAmount" : 175,
+            "engineeringUnitsHighAmount" : 300,
+            "showOnGUI": true
+        },
+        {
+            "name": "MAT 2",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 31,
+            "engineeringUnits" : "Amps",
+            "engineeringUnitsLowAmount" : 145,
+            "engineeringUnitsHighAmount" : 300,
+            "showOnGUI": false
+        },
+        {
+            "name": "DPT 2",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 32,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 100,
+            "engineeringUnitsHighAmount" : 200,
+            "showOnGUI": false
+        },
+        {
+            "name": "SPT 2",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 33,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 97.0,
+            "engineeringUnitsHighAmount" : 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "MAT2",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 34,
+            "engineeringUnits" : "Amps",
+            "engineeringUnitsLowAmount" : 145,
+            "engineeringUnitsHighAmount" : 200,
+            "showOnGUI": false
+        },
+        {
+            "name": "DPT 3",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 35,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 100,
+            "engineeringUnitsHighAmount" : 200,
+            "showOnGUI": false
+        },
+        {
+            "name": "SPT 3",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 36,
+            "engineeringUnits" : "PSI",
+            "engineeringUnitsLowAmount" : 97.0,
+            "engineeringUnitsHighAmount" : 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "MAT 3",
+            "sig_type" : "ao",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : "Amps",
+            "engineeringUnitsLowAmount" : 145,
+            "engineeringUnitsHighAmount" : 300,
+            "showOnGUI": false
+        },
+        {
+            "name": "UVT 1",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 12,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 100.0,
+            "engineeringUnitsHighAmount" : 0.0,
+            "showOnGUI": true,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "IVT 1",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 11,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 0.0,
+            "engineeringUnitsHighAmount" : 100.0,
+            "showOnGUI": true,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "UVT 2",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 22,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 100.0,
+            "engineeringUnitsHighAmount": 0.0,
+            "showOnGUI": false,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "IVT 2",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 0.0,
+            "engineeringUnitsHighAmount" : 100.0,
+            "showOnGUI": false,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "UVT 3",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 100.0,
+            "engineeringUnitsHighAmount" : 0.0,
+            "showOnGUI": false,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "IVT 3",
+            "sig_type" : "ai",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : "%",
+            "engineeringUnitsLowAmount" : 0.0,
+            "engineeringUnitsHighAmount" : 100.0,
+            "showOnGUI": false,
+            "offset_calib_constant" : 0,
+            "slope_calib_constant":1
+        },
+        {
+            "name": "MTR 1",
+            "sig_type" : "di",
+            "boardSlotPosition" : 14,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": true
+        },
+        {
+            "name": "MST 2",
+            "sig_type" : "di",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "MTR 3",
+            "sig_type" : "di",
+            "boardSlotPosition" : 13,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "Motor Status 1",
+            "sig_type" : "do",
+            "boardSlotPosition" : 16,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": true
+        },
+        {
+            "name": "Motor Status 2",
+            "sig_type" : "do",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "Motor Status 3",
+            "sig_type" : "do",
+            "boardSlotPosition" : 99,
+            "engineeringUnits" : null,
+            "engineeringUnitsLowAmount" : 0,
+            "engineeringUnitsHighAmount" : 1,
+            "showOnGUI": false
+        }
+    ]
+}
