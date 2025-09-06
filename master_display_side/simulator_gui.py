@@ -33,12 +33,15 @@ def exception_handler(type, value, tb):
     
 print("Reading config.json...", end="")
 
+# Use absolute path for config.json
+config_path = os.path.join(current_dir, "config.json")
+
 # load channel entries from config file
 my_channel_entries = Channel_Entries()
-my_channel_entries.load_from_config_file(config_file_path="config.json")
+my_channel_entries.load_from_config_file(config_file_path=config_path)
 
 # now read the `runtime_settings`
-with open("config.json", 'r') as f:
+with open(config_path, 'r') as f:
     all_json = json.load(f)
 
 try:
@@ -65,7 +68,8 @@ SSM = SocketSenderManager(host="192.168.80.1", port=5000,
 
 # Configure the main application window
 app = ctk.CTk()
-app.wm_iconbitmap('app_icon.ico')
+icon_path = os.path.join(current_dir, "app_icon.ico")
+app.wm_iconbitmap(icon_path)
 app.title("GCC Compressor Simulator v1.0")
 app.geometry(f"{app.winfo_screenwidth()}x{app.winfo_screenheight()}")
 app.grid_rowconfigure(0, weight=1)

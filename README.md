@@ -1,8 +1,11 @@
+
 # FSE_Capstone_sim- A Compressor Simulator for FS-Elliott
- Grove City College Senior Capstone Project (2024-25)
+ Grove City College Senior Capstone Project (2025-2026)
  
- **Team members:** Peter Reynolds, Adam Steinmetz, Carter Deliere, Christian Wiseman
+ **Team members:** Ian Armour, Haddon Baker, James Laird, Kendall Kauffmann, Jacob Schroeder 
  ## Purpose
+This is the second iteration of the Compressor Simulator Project. Previous docs will be preserved but will include different formatting so that the new team's work is distinguishable from the old team's work. 
+<!-- BEGIN OLD DOCS -->
 The FS-Elliott company needed a space-efficient way to test the control panels it produces that control its industrial air compresssors.  They requested a digitally-controlled device that can replicate the electrical signals produced by an air compressor. By attaching the simulator to the control panel, the behavior can be verified without having to connect an actual air compressor.
 
  ## System Architecture
@@ -21,4 +24,5 @@ This panel was custom-made by the Team. The Raspberry Pi is mounted at the top r
 <img width="300" alt="exterior_labeled" src="https://github.com/user-attachments/assets/753baa34-efbc-4a4e-b453-554c439267a0"/>
 <img width="300" alt="exterior_port_side" src="https://github.com/user-attachments/assets/796b5c59-a38a-4a52-b595-a717e1dafdbb"/>
 <img width="300" alt="enc_interior" src="https://github.com/user-attachments/assets/7fa434b6-7390-4a43-9a65-47343bfcabef"/>
+<!-- END OLD DOCS -->
 
