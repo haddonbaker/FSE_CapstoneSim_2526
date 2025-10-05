@@ -107,10 +107,10 @@ digital_inputs_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 ##### error reporting frame ######
 error_frame = ctk.CTkFrame(main_frame, corner_radius=10)
 error_frame.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
-error_frame_label = ctk.CTkLabel(error_frame, text="Errors", font=("Arial", 16))
+error_frame_label = ctk.CTkLabel(error_frame, text="Errors", font=("Consolas", 16))
 error_frame_label.pack(pady=(5, 2))
 # Error message label that can be updated
-error_label = ctk.CTkLabel(error_frame, text="", text_color="red", font=("Arial", 15), wraplength=400, justify="left")
+error_label = ctk.CTkLabel(error_frame, text="", text_color="red", font=("Consolas", 15), wraplength=400, justify="left")
 error_label.pack(padx=10, pady=5, side="left")
 # clear button that clears the most recent error
 error_clear_btn = ctk.CTkButton(error_frame, text="x", fg_color="red", hover_color="red", width=40) # , command=lambda f=frame, n=name: cancel_ramp_callback(frame=f, sigName=n)
@@ -124,16 +124,16 @@ connector_frame = ctk.CTkFrame(main_frame, corner_radius=10)
 connector_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
 # Connection status pane: write once
-ctk.CTkLabel(connector_frame, text="Connection Status", font=("Arial", 16)).pack(pady=(5, 2))
-status_label = ctk.CTkLabel(connector_frame, text="Unknown", text_color="gray", font=("Arial", 15))
+ctk.CTkLabel(connector_frame, text="Connection Status", font=("Consolas", 16)).pack(pady=(5, 2))
+status_label = ctk.CTkLabel(connector_frame, text="Unknown", text_color="gray", font=("Consolas", 15))
 status_label.pack(padx=10, pady=5)
 
 
 # Analog Outputs with Scrollbar
-analog_outputs_label = ctk.CTkLabel(analog_outputs_frame, text="Analog Outputs", font=("Arial", 16))
+analog_outputs_label = ctk.CTkLabel(analog_outputs_frame, text="Analog Outputs", font=("Consolas", 16))
 analog_outputs_label.pack(pady=10)
 
-ai_label = ctk.CTkLabel(analog_inputs_frame, text="Analog Inputs", font=("Arial", 16))#.pack(pady=10)
+ai_label = ctk.CTkLabel(analog_inputs_frame, text="Analog Inputs", font=("Consolas", 16))#.pack(pady=10)
 ai_label.grid(row=0, column=0, pady=10, sticky="nsew")
 
 
@@ -156,13 +156,13 @@ for name, ch_entry in my_channel_entries.channels.items():
     # currRow + 1 because first row is reserved for AI frame label
     meter_frame.grid(column=currCol, row=currRow+1, padx=10, pady=0, sticky="nsew")
     # print(f"row,col={currRow},{currCol}")
-    meter = Meter(meter_frame, scroll_steps=0, interactive=False, radius=170, text_font = ctk.CTkFont("Arial", size=14), integer=False)
+    meter = Meter(meter_frame, scroll_steps=0, interactive=False, radius=170, text_font = ctk.CTkFont("Consolas", size=14), integer=False)
     # integer=True because we're displaying a percentage that doesn't require the default 2 decimal places
     
     
     meter.grid(row=0,column=0, padx=10, pady=10, sticky="nsew")
 
-    l = ctk.CTkLabel(meter_frame, text=f"{name} ({ch_entry.units})")
+    l = ctk.CTkLabel(meter_frame, text=f"{name} ({ch_entry.units})", font=("Consolas", 12))
     l.grid(row=1, column=0, pady=10, sticky="s")
     ai_meter_objects[name] = meter
     
@@ -331,7 +331,7 @@ def toggleDOswitch(name:str, ctkSwitch):
         
 # digital outputs
 do_switches = dict() # like name:<switch obj>
-ctk.CTkLabel(digital_outputs_frame, text="Digital Outputs", font=("Arial", 16)).pack(pady=10)
+ctk.CTkLabel(digital_outputs_frame, text="Digital Outputs", font=("Consolas", 16)).pack(pady=10)
 
 
 for name, ch_entry in my_channel_entries.channels.items():
@@ -350,7 +350,7 @@ def toggle_light():
     indicator_light.configure(fg_color="green" if motor_status_switch.get() else "gray")
 
 di_label_objects = dict() # key:value = "AOP":<label obj>. Change the fg_color
-ctk.CTkLabel(digital_inputs_frame, text="Digital Inputs", font=("Arial", 16)).pack(pady=10)
+ctk.CTkLabel(digital_inputs_frame, text="Digital Inputs", font=("Consolas", 16)).pack(pady=10)
 
 for name, ch_entry in my_channel_entries.channels.items():
 
