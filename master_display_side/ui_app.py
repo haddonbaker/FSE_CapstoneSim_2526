@@ -12,6 +12,7 @@ from collections import deque
 from pathlib import Path
 from typing import Dict
 
+import tkinter as tk
 import customtkinter as ctk
 from tkdial import Meter
 
@@ -125,8 +126,8 @@ class SimulatorApp:
         self.error_frame_label = ctk.CTkLabel(self.error_frame, text="Errors", font=("Consolas", 16))
         self.error_frame_label.pack(pady=(5, 2))
         self.error_label = ctk.CTkLabel(self.error_frame, text="", text_color="red", font=("Consolas", 15), wraplength=400, justify="left")
-        self.error_label.pack(padx=10, pady=5, side="left")
-        self.error_clear_btn = ctk.CTkButton(self.error_frame, text="x", fg_color="red", hover_color="red", width=40, command=self.pop_error)
+        self.error_label.pack(side="left", expand=True, fill="x")
+        self.error_clear_btn = ctk.CTkButton(self.error_frame, text="x", fg_color="red", hover_color="darkred", width=40, command=self.pop_error,anchor="center")
         self.error_clear_btn.pack_forget()
 
         self.connector_frame = ctk.CTkFrame(self.main_frame, corner_radius=10)
@@ -136,37 +137,120 @@ class SimulatorApp:
         self.status_label.pack(padx=10, pady=5)
 
         # analog outputs scroll area
-        self.analog_outputs_label = ctk.CTkLabel(self.analog_outputs_frame, text="Analog Outputs", font=("Consolas", 16))
-        self.analog_outputs_label.pack(pady=10)
+        # --- Analog Outputs header row (label + dropdown on same line) ---
+        header_frame = ctk.CTkFrame(self.analog_outputs_frame, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(10, 5), padx=10)
+
+        self.analog_outputs_label = ctk.CTkLabel(
+            header_frame, text="Analog Outputs", font=("Consolas", 16)
+        )
+        self.analog_outputs_label.pack(side="left")
+
+        # Dropdown aligned to right of the label
+        hidden_aos = [
+            name for name, ch in self.channel_mgr.channels.items()
+            if ch.sig_type.lower() == "ao" and not ch.showOnGUI
+        ]
+        if hidden_aos:
+            self.add_ao_dropdown = ctk.CTkOptionMenu(
+                header_frame,
+                values=hidden_aos,
+                command=self._add_selected_ao,
+                width=200
+            )
+            self.add_ao_dropdown.pack(side="right", padx=5)
+            self.add_ao_dropdown.set("Add More AO Channels")
+        else:
+            self.add_ao_dropdown = None
+
+        # Scrollable area for AO channel widgets
         self.scrollable_frame = ctk.CTkScrollableFrame(master=self.analog_outputs_frame, width=500)
         self.scrollable_frame.pack(fill="both", expand=True)
 
-        # analog inputs label in its frame
-        self.ai_label = ctk.CTkLabel(self.analog_inputs_frame, text="Analog Inputs", font=("Consolas", 16))
-        self.ai_label.grid(row=0, column=0, pady=10, sticky="nsew")
+        # Header frame for Analog Inputs (title + dropdown on same row)
+        ai_header = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
+        ai_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(10, 5))
+        ai_header.grid_columnconfigure(0, weight=1)
+        ai_header.grid_columnconfigure(1, weight=0)
+
+        # container for AI meters (keeps background consistent and columns balanced)
+        self.ai_container = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
+        # place the container under the header (row 1), spanning the frame's columns
+        self.ai_container.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0,10))
+
+        # Configure a fixed number of display columns (3 is a good balance).
+        # Adjust columns_count if you'd prefer 2 or 4 columns.
+        self._ai_columns_count = 3
+        for c in range(self._ai_columns_count):
+            self.ai_container.grid_columnconfigure(c, weight=1)
+        # allow rows to expand vertically
+        self.ai_container.grid_rowconfigure(0, weight=1)
+
+
+        self.ai_label = ctk.CTkLabel(ai_header, text="Analog Inputs", font=("Consolas", 16))
+        self.ai_label.grid(row=0, column=0, sticky="w", padx=10)
+
+        hidden_ais = [
+            name for name, ch in self.channel_mgr.channels.items()
+            if ch.sig_type.lower() == "ai" and not ch.showOnGUI
+        ]
+        if hidden_ais:
+            self.add_ai_dropdown = ctk.CTkOptionMenu(
+                ai_header,
+                values=hidden_ais,
+                command=self._add_selected_ai,
+                width=200
+            )
+            self.add_ai_dropdown.grid(row=0, column=1, sticky="e", padx=10)
+            self.add_ai_dropdown.set("Add More AI Channels")
+        else:
+            self.add_ai_dropdown = None
+
 
     def _populate_analog_inputs(self):
-        currCol = 0
-        currRow = 0
-        numInCurrCol = 0
+        """
+        Populate AI meters inside a dedicated container (self.ai_container).
+        Uses self._ai_columns_count columns and places meters left-to-right, top-to-bottom.
+        """
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "ai" or not ch_entry.showOnGUI:
                 continue
-            meter_frame = ctk.CTkFrame(self.analog_inputs_frame)
-            meter_frame.grid(column=currCol, row=currRow+1, padx=10, pady=0, sticky="nsew")
-            meter = Meter(meter_frame, scroll_steps=0, interactive=False, radius=170, text_font = ctk.CTkFont("Consolas", size=14), integer=False)
-            meter.grid(row=0,column=0, padx=10, pady=10, sticky="nsew")
-            l = ctk.CTkLabel(meter_frame, text=f"{name} ({ch_entry.units})", font=("Consolas", 12))
-            l.grid(row=1, column=0, pady=10, sticky="s")
+
+            idx = len(self.ai_meter_objects)
+            currCol = idx % self._ai_columns_count
+            currRow = idx // self._ai_columns_count
+
+            # Create transparent frame container for consistent spacing
+            meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20)
+            meter_frame.grid(column=currCol, row=currRow, padx=8, pady=8, sticky="nsew")
+            meter_frame.grid_columnconfigure(0, weight=1)
+            meter_frame.grid_rowconfigure(0, weight=1)
+
+            # Safe background color for tk widgets (avoid "transparent")
+            bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+            meter_holder = tk.Frame(meter_frame, bg=bg_color)
+            meter_holder.grid(row=0, column=0, sticky="nsew")
+
+            # Create the actual meter
+            meter = Meter(
+                meter_holder,
+                scroll_steps=0,
+                interactive=False,
+                radius=140,
+                text_font=("Consolas", 14),
+                integer=False
+            )
+            meter.pack(expand=True, fill="both", padx=6, pady=6)
+
+            # --- NEW: Add channel label below each meter ---
+            label = ctk.CTkLabel(meter_frame, text=name, font=("Consolas", 14))
+            label.grid(row=1, column=0, pady=(4, 0))  # small gap below meter
+
             self.ai_meter_objects[name] = meter
 
-            numInCurrCol += 1
-            currRow = (currRow + 1) % 2
-            if numInCurrCol == 2:
-                numInCurrCol = 0
-                currCol += 1
 
-    def _populate_analog_outputs(self):
+
+    def _create_single_ao_row(self, name, ch_entry):
         def create_dropdown(parent, name):
             frame = ctk.CTkFrame(parent)
             ddminLabel = ctk.CTkLabel(frame, text="Minimum Value")
@@ -176,7 +260,6 @@ class SimulatorApp:
             ddmaxLabel = ctk.CTkLabel(frame, text="Maximum Value")
             ddmaxLabel.pack()
             ddmaxEntry = ctk.CTkEntry(frame, width=100)
-            ddmaxEntry.pack()
             ddrateLabel = ctk.CTkLabel(frame, text="Rate")
             ddrateLabel.pack()
             ddrateEntry = ctk.CTkEntry(frame, width=100)
@@ -187,7 +270,7 @@ class SimulatorApp:
             sendBtn = ctk.CTkButton(button_frame, text="Send", fg_color="blue")
             sendBtn.pack(side="left", padx=5)
             clear_btn = ctk.CTkButton(button_frame, text="Cancel", fg_color="red",
-                                     command=lambda f=frame, n=name: self.cancel_ramp_callback(sigName=n))
+                                    command=lambda f=frame, n=name: self.cancel_ramp_callback(sigName=n))
             clear_btn.pack(side="left", padx=5)
             return [frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn]
 
@@ -196,40 +279,238 @@ class SimulatorApp:
             dmaxLabel.configure(text=f"Stop ({unit})")
             drateLabel.configure(text=f"Rate ({unit}/s)")
 
-        for name, ch_entry in self.channel_mgr.channels.items():
-            if ch_entry.sig_type.lower() != "ao" or not ch_entry.showOnGUI:
-                continue
-            frame = ctk.CTkFrame(self.scrollable_frame)
+        frame = ctk.CTkFrame(self.scrollable_frame)
+        existing_names = sorted(self.ao_label_objects.keys(), key=self._natural_sort_key)
+        insert_before = None
+        for existing in existing_names:
+            if self._natural_sort_key(name) < self._natural_sort_key(existing):
+                insert_before = self.ao_label_objects[existing].master  # get parent frame
+                break
+
+        if insert_before is not None:
+            frame.pack(pady=5, fill='x', before=insert_before)
+        else:
             frame.pack(pady=5, fill='x')
-            ctk.CTkLabel(frame, text=f"{name}").grid(row=0, column=0, padx=5, sticky="w")
-            input_value_entry = ctk.CTkEntry(frame, width=100)
-            input_value_entry.grid(row=0, column=1, padx=5)
+        ctk.CTkLabel(frame, text=f"{name}").grid(row=0, column=0, padx=5, sticky="w")
+        input_value_entry = ctk.CTkEntry(frame, width=100)
+        input_value_entry.grid(row=0, column=1, padx=5)
 
-            unitSelector = ctk.CTkSegmentedButton(frame, values=[f"{ch_entry.units}", "mA"], selected_color="green", selected_hover_color="green")
-            unitSelector.set(f"{ch_entry.units}")
+        unitSelector = ctk.CTkSegmentedButton(
+            frame, values=[f"{ch_entry.units}", "mA"],
+            selected_color="green", selected_hover_color="green"
+        )
+        unitSelector.set(f"{ch_entry.units}")
 
-            send_btn = ctk.CTkButton(frame, text="Send", fg_color="blue",
-                                     command=lambda n=name, e=input_value_entry, s=unitSelector: self.place_single(n, e, s))
-            send_btn.grid(row=0, column=3, padx=5)
+        send_btn = ctk.CTkButton(
+            frame, text="Send", fg_color="blue",
+            command=lambda n=name, e=input_value_entry, s=unitSelector: self.place_single(n, e, s)
+        )
+        send_btn.grid(row=0, column=3, padx=5)
 
-            dropdown_frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn = create_dropdown(self.scrollable_frame, name)
-            arrow_button = ctk.CTkButton(frame, text="⬇ Ramp", width=20)
-            arrow_button.configure(command=lambda f=dropdown_frame, p=frame, b=send_btn, ab=arrow_button: self.toggle_dropdown(f, p, b, ab))
-            arrow_button.grid(row=0, column=4, padx=5)
-            dropdown_frame.pack_forget()
+        dropdown_frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn = create_dropdown(self.scrollable_frame, name)
+        arrow_button = ctk.CTkButton(frame, text="⬇ Ramp", width=20)
+        arrow_button.configure(command=lambda f=dropdown_frame, p=frame, b=send_btn, ab=arrow_button: self.toggle_dropdown(f, p, b, ab))
+        arrow_button.grid(row=0, column=4, padx=5)
+        dropdown_frame.pack_forget()
 
-            sendBtn.configure(command=lambda n=name, dmin=ddminEntry, dmax=ddmaxEntry, drate=ddrateEntry, us=unitSelector: self.place_ramp(n, dmin, dmax, drate, us))
+        sendBtn.configure(command=lambda n=name, dmin=ddminEntry, dmax=ddmaxEntry, drate=ddrateEntry, us=unitSelector:
+                        self.place_ramp(n, dmin, dmax, drate, us))
 
-            unitSelector.configure(command=lambda unit=unitSelector.get(), dmin=ddminLabel, dmax=ddmaxLabel, drate=ddrateLabel: segmented_button_callback(unit, dmin, dmax, drate))
-            segmented_button_callback(ch_entry.units, ddminLabel, ddmaxLabel, ddrateLabel)
-            unitSelector.grid(row=0, column=2, padx=5)
+        unitSelector.configure(command=lambda unit=unitSelector.get(), dmin=ddminLabel, dmax=ddmaxLabel, drate=ddrateLabel:
+                            segmented_button_callback(unit, dmin, dmax, drate))
+        segmented_button_callback(ch_entry.units, ddminLabel, ddmaxLabel, ddrateLabel)
+        unitSelector.grid(row=0, column=2, padx=5)
 
-            lastSentLabel = ctk.CTkLabel(frame, text="")
-            lastSentLabel.grid(row=0, column=5, padx=5, sticky="e")
-            self.ao_label_objects[name] = lastSentLabel
+        lastSentLabel = ctk.CTkLabel(frame, text="")
+        lastSentLabel.grid(row=0, column=5, padx=5, sticky="e")
+        self.ao_label_objects[name] = lastSentLabel
+
+
+    def _populate_analog_outputs(self):
+        for name, ch_entry in self.channel_mgr.channels.items():
+            if ch_entry.sig_type.lower() == "ao" and ch_entry.showOnGUI:
+                self._create_single_ao_row(name, ch_entry)
+
+    def _add_selected_ao(self, selection: str):
+        """Triggered when the user picks a hidden AO from the dropdown."""
+        if selection == "Add more AO channels...":
+            return
+
+        ch_entry = self.channel_mgr.channels.get(selection)
+        if ch_entry is None:
+            self.show_error(f"Channel {selection} not found in config.")
+            return
+
+        # Mark as visible and create its UI
+        ch_entry.showOnGUI = True
+        self._create_single_ao_row(selection, ch_entry)
+
+        # Update dropdown: remove the added one
+        remaining = [v for v in self.add_ao_dropdown.cget("values") if v != selection]
+        if remaining:
+            self.add_ao_dropdown.configure(values=remaining)
+            self.add_ao_dropdown.set("Add more AO channels...")
+        else:
+            self.add_ao_dropdown.destroy()
+            self.add_ao_dropdown = None
+
+    def _add_selected_ai(self, selection: str):
+        """Triggered when the user picks a hidden AI from the dropdown."""
+        if selection == "Add more AI channels...":
+            return
+
+        ch_entry = self.channel_mgr.channels.get(selection)
+        if ch_entry is None:
+            self.show_error(f"Channel {selection} not found in config.")
+            return
+
+        # Mark as visible
+        ch_entry.showOnGUI = True
+
+        # Use the same column/row math as populate to avoid replacing existing meters
+        idx = len(self.ai_meter_objects)
+        currCol = idx % self._ai_columns_count
+        currRow = idx // self._ai_columns_count
+
+        meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20)
+        meter_frame.grid(column=currCol, row=currRow, padx=8, pady=8, sticky="nsew")
+        meter_frame.grid_columnconfigure(0, weight=1)
+        meter_frame.grid_rowconfigure(0, weight=1)
+
+        # Create a plain Tkinter frame as the Meter's container (inside the CTk frame)
+        
+        meter_parent = tk.Frame(meter_frame)
+        meter_parent.grid(row=0, column=0, sticky="nsew")
+
+        # Create a small plain tk.Frame *inside* the CTkFrame for compatibility
+        bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+        meter_holder = tk.Frame(meter_frame, bg=bg_color)
+        meter_holder.grid(row=0, column=0, sticky="nsew")
+
+        # Now put the Meter inside that holder
+        meter = Meter(
+            meter_holder,
+            scroll_steps=0,
+            interactive=False,
+            radius=140,
+            text_font=("Consolas", 14),  # tkmeter only supports standard font tuples
+            integer=False
+        )
+        meter.pack(expand=True, fill="both", padx=6, pady=6)
+        label = ctk.CTkLabel(meter_frame, text=selection, font=("Consolas", 14))
+        label.grid(row=1, column=0, pady=(4, 0))
+        self.ai_meter_objects[selection] = meter
+
+        # Update dropdown: remove the added one
+        remaining = [v for v in self.add_ai_dropdown.cget("values") if v != selection]
+        if remaining:
+            self.add_ai_dropdown.configure(values=remaining)
+            self.add_ai_dropdown.set("Add more AI channels...")
+        else:
+            self.add_ai_dropdown.destroy()
+            self.add_ai_dropdown = None
+
+
+    def _add_selected_do(self, selection: str):
+        """Triggered when the user picks a hidden DO from the dropdown."""
+        if selection == "Add more DO channels...":
+            return
+
+        ch_entry = self.channel_mgr.channels.get(selection)
+        if ch_entry is None:
+            self.show_error(f"Channel {selection} not found in config.")
+            return
+
+        # Mark as visible
+        ch_entry.showOnGUI = True
+
+        # Create and pack the switch for this DO
+        motor_status_switch = ctk.CTkSwitch(
+            self.digital_outputs_frame,
+            text=ch_entry.name,
+            onvalue=1,
+            offvalue=0
+        )
+        motor_status_switch.configure(
+            command=lambda n=selection, switchObj=motor_status_switch:
+                self.toggle_do_switch(n, switchObj)
+        )
+        motor_status_switch.pack(side="left", padx=10, expand=True)
+        motor_status_switch.select()
+        self.do_switches[selection] = motor_status_switch
+
+        # Update dropdown
+        remaining = [v for v in self.add_do_dropdown.cget("values") if v != selection]
+        if remaining:
+            self.add_do_dropdown.configure(values=remaining)
+            self.add_do_dropdown.set("Add more DO channels...")
+        else:
+            self.add_do_dropdown.destroy()
+            self.add_do_dropdown = None
+
+    def _add_selected_di(self, selection: str):
+        """Triggered when the user picks a hidden DI from the dropdown."""
+        if selection == "Add more DI channels...":
+            return
+
+        ch_entry = self.channel_mgr.channels.get(selection)
+        if ch_entry is None:
+            self.show_error(f"Channel {selection} not found in config.")
+            return
+
+        # Mark as visible
+        ch_entry.showOnGUI = True
+
+        # Create and pack the DI indicator
+        indicator_frame = ctk.CTkFrame(self.digital_inputs_frame)
+        indicator_frame.pack(pady=10, padx=20, side="left", expand=True)
+        indicator_label = ctk.CTkLabel(indicator_frame, text=ch_entry.name)
+        indicator_label.pack(side="left", padx=10)
+        indicator_light = ctk.CTkLabel(
+            indicator_frame,
+            text="",
+            width=20,
+            height=20,
+            corner_radius=10,
+            fg_color="gray"
+        )
+        self.di_label_objects[selection] = indicator_light
+        indicator_light.pack(side="left")
+
+        # Update dropdown
+        remaining = [v for v in self.add_di_dropdown.cget("values") if v != selection]
+        if remaining:
+            self.add_di_dropdown.configure(values=remaining)
+            self.add_di_dropdown.set("Add more DI channels...")
+        else:
+            self.add_di_dropdown.destroy()
+            self.add_di_dropdown = None
+
+
 
     def _populate_digital_outputs(self):
-        ctk.CTkLabel(self.digital_outputs_frame, text="Digital Outputs", font=("Consolas", 16)).pack(pady=10)
+        # Header frame for Digital Outputs (title + dropdown)
+        do_header = ctk.CTkFrame(self.digital_outputs_frame, fg_color="transparent")
+        do_header.pack(fill="x", pady=(10, 5), padx=10)
+        ctk.CTkLabel(do_header, text="Digital Outputs", font=("Consolas", 16)).pack(side="left")
+
+        hidden_dos = [
+            name for name, ch in self.channel_mgr.channels.items()
+            if ch.sig_type.lower() == "do" and not ch.showOnGUI
+        ]
+        if hidden_dos:
+            self.add_do_dropdown = ctk.CTkOptionMenu(
+                do_header,
+                values=hidden_dos,
+                command=self._add_selected_do,
+                width=200
+            )
+            self.add_do_dropdown.pack(side="right")
+            self.add_do_dropdown.set("Add More DO Channels")
+        else:
+            self.add_do_dropdown = None
+
+
 
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "do" or not ch_entry.showOnGUI:
@@ -241,7 +522,29 @@ class SimulatorApp:
             self.do_switches[name] = motor_status_switch
 
     def _populate_digital_inputs(self):
-        ctk.CTkLabel(self.digital_inputs_frame, text="Digital Inputs", font=("Consolas", 16)).pack(pady=10)
+       # Header frame for Digital Inputs (title + dropdown)
+        di_header = ctk.CTkFrame(self.digital_inputs_frame, fg_color="transparent")
+        di_header.pack(fill="x", pady=(10, 5), padx=10)
+        ctk.CTkLabel(di_header, text="Digital Inputs", font=("Consolas", 16)).pack(side="left")
+
+        hidden_dis = [
+            name for name, ch in self.channel_mgr.channels.items()
+            if ch.sig_type.lower() == "di" and not ch.showOnGUI
+        ]
+        if hidden_dis:
+            self.add_di_dropdown = ctk.CTkOptionMenu(
+                di_header,
+                values=hidden_dis,
+                command=self._add_selected_di,
+                width=200
+            )
+            self.add_di_dropdown.pack(side="right")
+            self.add_di_dropdown.set("Add More DI Channels")
+        else:
+            self.add_di_dropdown = None
+
+
+
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "di" or not ch_entry.showOnGUI:
                 continue
@@ -339,7 +642,7 @@ class SimulatorApp:
         if message == "":
             self.error_clear_btn.pack_forget()
         else:
-            self.error_clear_btn.pack(padx=0, pady=5, side="right")
+            self.error_clear_btn.pack(padx=10, side="right")
             self.error_stack.append(message)
         if len(self.error_stack) >= self.error_stack_max_len:
             self.error_frame_label.configure(text=f"Errors ({len(self.error_stack)}+)")
@@ -425,6 +728,12 @@ class SimulatorApp:
 
         # rearm timer
         self.root.after(self.poll_buffer_period_ms, self.process_queue)
+
+    def _natural_sort_key(self, name: str):
+        """Extract numerical parts of a channel name for natural sorting."""
+        import re
+        parts = re.split(r'(\d+)', name)
+        return [int(p) if p.isdigit() else p.lower() for p in parts]
 
     def shutdown(self):
         try:

@@ -1,6 +1,6 @@
 # channel_manager.py
 """
-ChannelManager: thin wrapper around the provided Channel_Entries class.
+ChannelManager: thin wrapper around the Channel_Entries class.
 This keeps the rest of the app decoupled from direct imports of the
 channel_definitions module and gives us a place to add helpers later.
 """
