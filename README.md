@@ -3,9 +3,11 @@
  Grove City College Senior Capstone Project (2025-2026)
  
  **Team members:** Ian Armour, Haddon Baker, James Laird, Kendall Kauffmann, Jacob Schroeder 
- ## Purpose
-This is the second iteration of the Compressor Simulator Project. Previous docs will be preserved but will include different formatting so that the new team's work is distinguishable from the old team's work. 
+ ## IMPORTANT
+ This is the second iteration of the Compressor Simulator Project. Previous docs will be preserved but will include different formatting so that the new team's work is distinguishable from the old team's work. 
 <!-- BEGIN OLD DOCS -->
+ ## Purpose
+
 The FS-Elliott company needed a space-efficient way to test the control panels it produces that control its industrial air compresssors.  They requested a digitally-controlled device that can replicate the electrical signals produced by an air compressor. By attaching the simulator to the control panel, the behavior can be verified without having to connect an actual air compressor.
 
  ## System Architecture
