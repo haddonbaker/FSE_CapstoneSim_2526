@@ -138,11 +138,11 @@ class SimulatorApp:
 
         # analog outputs scroll area
         # --- Analog Outputs header row (label + dropdown on same line) ---
-        header_frame = ctk.CTkFrame(self.analog_outputs_frame, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(10, 5), padx=10)
+        self.ao_header_frame = ctk.CTkFrame(self.analog_outputs_frame, fg_color="transparent")
+        self.ao_header_frame.pack(fill="x", pady=(10, 5), padx=10)
 
         self.analog_outputs_label = ctk.CTkLabel(
-            header_frame, text="Analog Outputs", font=("Consolas", 16)
+            self.ao_header_frame, text="Analog Outputs", font=("Consolas", 16)
         )
         self.analog_outputs_label.pack(side="left")
 
@@ -153,7 +153,7 @@ class SimulatorApp:
         ]
         if hidden_aos:
             self.add_ao_dropdown = ctk.CTkOptionMenu(
-                header_frame,
+                self.ao_header_frame,
                 values=hidden_aos,
                 command=self._add_selected_ao,
                 width=200
@@ -168,10 +168,10 @@ class SimulatorApp:
         self.scrollable_frame.pack(fill="both", expand=True)
 
         # Header frame for Analog Inputs (title + dropdown on same row)
-        ai_header = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
-        ai_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(10, 5))
-        ai_header.grid_columnconfigure(0, weight=1)
-        ai_header.grid_columnconfigure(1, weight=0)
+        self.ai_header = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
+        self.ai_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(10, 5))
+        self.ai_header.grid_columnconfigure(0, weight=1)
+        self.ai_header.grid_columnconfigure(1, weight=0)
 
         # container for AI meters (keeps background consistent and columns balanced)
         self.ai_container = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
@@ -187,7 +187,7 @@ class SimulatorApp:
         self.ai_container.grid_rowconfigure(0, weight=1)
 
 
-        self.ai_label = ctk.CTkLabel(ai_header, text="Analog Inputs", font=("Consolas", 16))
+        self.ai_label = ctk.CTkLabel(self.ai_header, text="Analog Inputs", font=("Consolas", 16))
         self.ai_label.grid(row=0, column=0, sticky="w", padx=10)
 
         hidden_ais = [
@@ -196,7 +196,7 @@ class SimulatorApp:
         ]
         if hidden_ais:
             self.add_ai_dropdown = ctk.CTkOptionMenu(
-                ai_header,
+                self.ai_header,
                 values=hidden_ais,
                 command=self._add_selected_ai,
                 width=200
@@ -208,30 +208,23 @@ class SimulatorApp:
 
 
     def _populate_analog_inputs(self):
-        """
-        Populate AI meters inside a dedicated container (self.ai_container).
-        Uses self._ai_columns_count columns and places meters left-to-right, top-to-bottom.
-        """
+        """Populate AI meters inside ai_container with consistent layout and sizing."""
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "ai" or not ch_entry.showOnGUI:
                 continue
 
             idx = len(self.ai_meter_objects)
-            currCol = idx % self._ai_columns_count
-            currRow = idx // self._ai_columns_count
+            curr_col = idx % self._ai_columns_count
+            curr_row = idx // self._ai_columns_count
 
-            # Create transparent frame container for consistent spacing
-            meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20)
-            meter_frame.grid(column=currCol, row=currRow, padx=8, pady=8, sticky="nsew")
-            meter_frame.grid_columnconfigure(0, weight=1)
-            meter_frame.grid_rowconfigure(0, weight=1)
+            meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20, width=200, height=200)
+            meter_frame.grid(column=curr_col, row=curr_row, padx=8, pady=8, sticky="nsew")
+            meter_frame.grid_propagate(False)  # lock frame size
 
-            # Safe background color for tk widgets (avoid "transparent")
             bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
             meter_holder = tk.Frame(meter_frame, bg=bg_color)
-            meter_holder.grid(row=0, column=0, sticky="nsew")
+            meter_holder.pack(expand=True, fill="both", padx=6, pady=6)
 
-            # Create the actual meter
             meter = Meter(
                 meter_holder,
                 scroll_steps=0,
@@ -240,17 +233,16 @@ class SimulatorApp:
                 text_font=("Consolas", 14),
                 integer=False
             )
-            meter.pack(expand=True, fill="both", padx=6, pady=6)
+            meter.pack(expand=True, fill="both")
 
-            # --- NEW: Add channel label below each meter ---
             label = ctk.CTkLabel(meter_frame, text=name, font=("Consolas", 14))
-            label.grid(row=1, column=0, pady=(4, 0))  # small gap below meter
+            label.pack(pady=(4, 0))
 
             self.ai_meter_objects[name] = meter
 
 
 
-    def _create_single_ao_row(self, name, ch_entry):
+    def _create_single_ao_row(self, name, ch_entry, removable=False):
         def create_dropdown(parent, name):
             frame = ctk.CTkFrame(parent)
             ddminLabel = ctk.CTkLabel(frame, text="Minimum Value")
@@ -321,6 +313,16 @@ class SimulatorApp:
         segmented_button_callback(ch_entry.units, ddminLabel, ddmaxLabel, ddrateLabel)
         unitSelector.grid(row=0, column=2, padx=5)
 
+        if removable:
+            remove_btn = ctk.CTkButton(
+                frame,
+                text="Remove",
+                fg_color="darkred",
+                command=lambda n=name, f=frame, df=dropdown_frame: self._remove_ao_row(n, f, df)
+            )
+            remove_btn.grid(row=0, column=6, padx=5)
+
+
         lastSentLabel = ctk.CTkLabel(frame, text="")
         lastSentLabel.grid(row=0, column=5, padx=5, sticky="e")
         self.ao_label_objects[name] = lastSentLabel
@@ -343,7 +345,7 @@ class SimulatorApp:
 
         # Mark as visible and create its UI
         ch_entry.showOnGUI = True
-        self._create_single_ao_row(selection, ch_entry)
+        self._create_single_ao_row(selection, ch_entry, removable=True)
 
         # Update dropdown: remove the added one
         remaining = [v for v in self.add_ao_dropdown.cget("values") if v != selection]
@@ -353,6 +355,39 @@ class SimulatorApp:
         else:
             self.add_ao_dropdown.destroy()
             self.add_ao_dropdown = None
+
+    def _remove_ao_row(self, name, frame, dropdown_frame):
+        """Remove a dynamically added AO row."""
+        # Destroy widgets
+        frame.destroy()
+        dropdown_frame.destroy()
+
+        # Update label tracking
+        if name in self.ao_label_objects:
+            del self.ao_label_objects[name]
+
+        # Update the channel’s visibility state
+        ch_entry = self.channel_mgr.channels.get(name)
+        if ch_entry:
+            ch_entry.showOnGUI = False
+
+        # Recreate dropdown if missing
+        if not self.add_ao_dropdown:
+            self.add_ao_dropdown = ctk.CTkOptionMenu(
+                self.ao_header_frame,
+                values=[name],
+                command=self._add_selected_ao
+            )
+            self.add_ao_dropdown.set("Add more AO channels...")
+            self.add_ao_dropdown.pack(side="right",padx=5)
+        else:
+            # Add this name back into dropdown
+            current_values = list(self.add_ao_dropdown.cget("values"))
+            if name not in current_values:
+                current_values.append(name)
+                current_values.sort(key=self._natural_sort_key)
+                self.add_ao_dropdown.configure(values=current_values)
+
 
     def _add_selected_ai(self, selection: str):
         """Triggered when the user picks a hidden AI from the dropdown."""
@@ -399,6 +434,16 @@ class SimulatorApp:
         meter.pack(expand=True, fill="both", padx=6, pady=6)
         label = ctk.CTkLabel(meter_frame, text=selection, font=("Consolas", 14))
         label.grid(row=1, column=0, pady=(4, 0))
+        
+
+        remove_btn = ctk.CTkButton(
+            meter_frame,
+            text="Remove",
+            fg_color="darkred",
+            command=lambda n=selection, f=meter_frame: self._remove_ai_meter(n, f)
+        )
+        remove_btn.grid(row=2, column=0, pady=(4, 6))
+
         self.ai_meter_objects[selection] = meter
 
         # Update dropdown: remove the added one
@@ -409,7 +454,55 @@ class SimulatorApp:
         else:
             self.add_ai_dropdown.destroy()
             self.add_ai_dropdown = None
+    def _remove_ai_meter(self, name, frame):
+        """Remove a dynamically added AI meter."""
+        frame.destroy()
 
+        if name in self.ai_meter_objects:
+            del self.ai_meter_objects[name]
+
+        ch_entry = self.channel_mgr.channels.get(name)
+        if ch_entry:
+            ch_entry.showOnGUI = False
+
+        # Recreate dropdown if needed
+        if not self.add_ai_dropdown:
+            self.add_ai_dropdown = ctk.CTkOptionMenu(
+                self.ai_header,
+                values=[name],
+                command=self._add_selected_ai,
+                width=200
+            )
+            self.add_ai_dropdown.grid(row=0, column=1, sticky="e", padx=10)
+            self.add_ai_dropdown.set("Add More AI Channels")
+        else:
+            current_values = list(self.add_ai_dropdown.cget("values"))
+            if name not in current_values:
+                current_values.append(name)
+                current_values.sort(key=self._natural_sort_key)
+                self.add_ai_dropdown.configure(values=current_values)
+
+        self._refresh_ai_layout()
+
+
+    def _refresh_ai_layout(self):
+        """Repack AI meters in a consistent grid layout with fixed sizing."""
+        # Clear existing grid placements
+        for widget in self.ai_container.winfo_children():
+            widget.grid_forget()
+
+        # Grid all meters in sorted order
+        for i, (name, meter) in enumerate(sorted(self.ai_meter_objects.items(), key=lambda x: self._natural_sort_key(x[0]))):
+            frame = meter.master.master  # go up from meter -> holder -> CTkFrame
+            curr_col = i % self._ai_columns_count
+            curr_row = i // self._ai_columns_count
+            frame.grid(column=curr_col, row=curr_row, padx=10, pady=10, sticky="nsew")
+
+        # Ensure consistent sizing
+        for c in range(self._ai_columns_count):
+            self.ai_container.grid_columnconfigure(c, weight=1, uniform="col")
+        for r in range((len(self.ai_meter_objects) + self._ai_columns_count - 1) // self._ai_columns_count):
+            self.ai_container.grid_rowconfigure(r, weight=1, uniform="row")
 
     def _add_selected_do(self, selection: str):
         """Triggered when the user picks a hidden DO from the dropdown."""
@@ -485,8 +578,6 @@ class SimulatorApp:
         else:
             self.add_di_dropdown.destroy()
             self.add_di_dropdown = None
-
-
 
     def _populate_digital_outputs(self):
         # Header frame for Digital Outputs (title + dropdown)
