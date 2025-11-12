@@ -1,4 +1,5 @@
 # channel_manager.py
+# created by Haddon Baker 10/7/25 with assistance from ChatGPT. Refactored from original simulator_gui.py for modularity
 """
 ChannelManager: thin wrapper around the Channel_Entries class.
 This keeps the rest of the app decoupled from direct imports of the

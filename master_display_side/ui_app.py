@@ -1,4 +1,5 @@
 # ui_app.py
+# created by Haddon Baker 10/7/25 with assistance from ChatGPT. Refactored from original simulator_gui.py for modularity
 """
 ui_app.py: main GUI app wrapped in a SimulatorApp class.
 This class constructs the CTk UI, wires events to the SocketController and ChannelManager,

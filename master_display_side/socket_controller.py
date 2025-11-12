@@ -1,4 +1,5 @@
 # socket_controller.py
+# created by Haddon Baker 10/7/25 with assistance from ChatGPT. Refactored from original simulator_gui.py for modularity
 """
 SocketController: wraps SocketSenderManager and exposes only the methods
 used by the GUI. Keeps the GUI code independent of the SocketSenderManager API.

@@ -1,4 +1,5 @@
 # main.py
+# created by Haddon Baker 10/7/25 with assistance from ChatGPT. Refactored from original simulator_gui.py for modularity
 """
 Bootstrap the modular GUI application.
 """
@@ -13,7 +14,7 @@ from ui_app import SimulatorApp
 if __name__ == "__main__":
     # determine paths
     current_dir = Path(__file__).resolve().parent
-    config_path = current_dir / "config.json"
+    config_path = current_dir / "default_config.json"
 
     # initialize channel manager and load config
     channel_mgr = ChannelManager() 
