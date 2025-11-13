@@ -42,6 +42,9 @@ class SimulatorApp:
         self.ao_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.di_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.do_switches: Dict[str, ctk.CTkSwitch] = {}
+        self.display_name_map = {}     # original_name → UI_display_name
+
+
 
         # queue for responses from socket controller
         self.socketRespQueue = self.socket_ctrl.response_queue
@@ -284,7 +287,13 @@ class SimulatorApp:
             frame.pack(pady=5, fill='x', before=insert_before)
         else:
             frame.pack(pady=5, fill='x')
-        ctk.CTkLabel(frame, text=f"{name}").grid(row=0, column=0, padx=5, sticky="w")
+        label = ctk.CTkLabel(frame, text=name)
+        label.grid(row=0, column=0, padx=5, sticky="w")
+
+        # enable renaming only for dynamically-added AO
+        if removable:
+            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+
         input_value_entry = ctk.CTkEntry(frame, width=100)
         input_value_entry.grid(row=0, column=1, padx=5)
 
@@ -435,6 +444,8 @@ class SimulatorApp:
         meter.pack(expand=True, fill="both", padx=6, pady=6)
         label = ctk.CTkLabel(meter_frame, text=selection, font=("Consolas", 14))
         label.grid(row=1, column=0, pady=(4, 0))
+        label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+
         
 
         remove_btn = ctk.CTkButton(
@@ -525,6 +536,10 @@ class SimulatorApp:
             onvalue=1,
             offvalue=0
         )
+        motor_status_switch.bind(
+            "<Button-3>", lambda e, n=selection, sw=motor_status_switch: self.prompt_rename(n, sw)
+        )
+
         motor_status_switch.configure(
             command=lambda n=selection, switchObj=motor_status_switch:
                 self.toggle_do_switch(n, switchObj)
@@ -560,6 +575,8 @@ class SimulatorApp:
         indicator_frame.pack(pady=10, padx=20, side="left", expand=True)
         indicator_label = ctk.CTkLabel(indicator_frame, text=ch_entry.name)
         indicator_label.pack(side="left", padx=10)
+        indicator_label.bind("<Button-1>", lambda e, n=selection, lbl=indicator_label: self.prompt_rename(n, lbl))
+
         indicator_light = ctk.CTkLabel(
             indicator_frame,
             text="",
@@ -647,6 +664,34 @@ class SimulatorApp:
             indicator_light = ctk.CTkLabel(indicator_frame, text="", width=20, height=20, corner_radius=10, fg_color="gray")
             self.di_label_objects[name] = indicator_light
             indicator_light.pack(side="left")
+
+    def prompt_rename(self, original_name: str, label_widget):
+        """Popup dialog allowing user to rename only dynamically-added signals."""
+        top = ctk.CTkToplevel(self.root)
+        top.title("Rename Signal")
+        top.geometry("300x150")
+
+        ctk.CTkLabel(top, text=f"Rename {original_name}").pack(pady=10)
+
+        entry = ctk.CTkEntry(top)
+        entry.pack(pady=5)
+
+        # Pre-fill with existing renamed value or the original name
+        entry.insert(0, self.display_name_map.get(original_name, original_name))
+
+        def submit():
+            new_name = entry.get().strip()
+            if new_name:
+                self.display_name_map[original_name] = new_name
+
+                # Switch widgets use .configure(text=...)
+                label_widget.configure(text=new_name)
+
+            top.destroy()
+
+        ctk.CTkButton(top, text="OK", command=submit).pack(pady=10)
+
+
 
     # UI helpers and command handlers
     def toggle_dropdown(self, frame, parent_frame, sendBtn, arrowBtn):
