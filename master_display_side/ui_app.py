@@ -675,7 +675,9 @@ class SimulatorApp:
 
         entry = ctk.CTkEntry(top)
         entry.pack(pady=5)
-
+        
+        # move popup to the front
+        top.after(100, top.lift)
         # Pre-fill with existing renamed value or the original name
         entry.insert(0, self.display_name_map.get(original_name, original_name))
 
