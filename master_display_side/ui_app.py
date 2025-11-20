@@ -168,31 +168,16 @@ class SimulatorApp:
             self.add_ao_dropdown = None
 
         # Scrollable area for AO channel widgets
-        self.scrollable_frame = ctk.CTkScrollableFrame(master=self.analog_outputs_frame, width=500)
-        self.scrollable_frame.pack(fill="both", expand=True)
+        self.scrollable_ao_frame = ctk.CTkScrollableFrame(self.analog_outputs_frame)
+        self.scrollable_ao_frame.pack(fill="both", expand=True, padx=10, pady=(0,10))
 
-        # Header frame for Analog Inputs (title + dropdown on same row)
+        # === ANALOG INPUTS – FULL WIDTH SCROLLABLE ===
         self.ai_header = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
-        self.ai_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(10, 5))
+        self.ai_header.grid(row=0, column=0, sticky="ew", pady=(10, 5), padx=10)
         self.ai_header.grid_columnconfigure(0, weight=1)
-        self.ai_header.grid_columnconfigure(1, weight=0)
-
-        # container for AI meters (keeps background consistent and columns balanced)
-        self.ai_container = ctk.CTkFrame(self.analog_inputs_frame, fg_color="transparent")
-        # place the container under the header (row 1), spanning the frame's columns
-        self.ai_container.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0,10))
-
-        # Configure a fixed number of display columns (3 is a good balance).
-        # Adjust columns_count if you'd prefer 2 or 4 columns.
-        self._ai_columns_count = 3
-        for c in range(self._ai_columns_count):
-            self.ai_container.grid_columnconfigure(c, weight=1)
-        # allow rows to expand vertically
-        self.ai_container.grid_rowconfigure(0, weight=1)
-
 
         self.ai_label = ctk.CTkLabel(self.ai_header, text="Analog Inputs", font=("Consolas", 16))
-        self.ai_label.grid(row=0, column=0, sticky="w", padx=10)
+        self.ai_label.grid(row=0, column=0, sticky="w")
 
         hidden_ais = [
             name for name, ch in self.channel_mgr.channels.items()
@@ -210,20 +195,39 @@ class SimulatorApp:
         else:
             self.add_ai_dropdown = None
 
+        # Critical: Make the analog_inputs_frame expand properly
+        self.analog_inputs_frame.grid_rowconfigure(1, weight=1)
+        self.analog_inputs_frame.grid_columnconfigure(0, weight=1)
+
+        # Scrollable frame that takes full width
+        self.scrollable_ai_frame = ctk.CTkScrollableFrame(
+            self.analog_inputs_frame,
+            corner_radius=10
+        )
+        self.scrollable_ai_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0,10))
+
+        # Inner container for grid layout
+        self.ai_grid_container = ctk.CTkFrame(self.scrollable_ai_frame, fg_color="transparent")
+        self.ai_grid_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self._ai_columns_count = 3
+        for i in range(self._ai_columns_count):
+            self.ai_grid_container.grid_columnconfigure(i, weight=1, uniform="ai_col")
+
 
     def _populate_analog_inputs(self):
-        """Populate AI meters inside ai_container with consistent layout and sizing."""
+        """Populate AI meters in a scrollable grid."""
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "ai" or not ch_entry.showOnGUI:
                 continue
 
             idx = len(self.ai_meter_objects)
-            curr_col = idx % self._ai_columns_count
-            curr_row = idx // self._ai_columns_count
+            col = idx % self._ai_columns_count
+            row = idx // self._ai_columns_count
 
-            meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20, width=200, height=200)
-            meter_frame.grid(column=curr_col, row=curr_row, padx=8, pady=8, sticky="nsew")
-            meter_frame.grid_propagate(False)  # lock frame size
+            meter_frame = ctk.CTkFrame(self.ai_grid_container, fg_color="transparent", corner_radius=20)
+            meter_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            meter_frame.grid_propagate(False)
 
             bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
             meter_holder = tk.Frame(meter_frame, bg=bg_color)
@@ -275,7 +279,7 @@ class SimulatorApp:
             dmaxLabel.configure(text=f"Stop ({unit})")
             drateLabel.configure(text=f"Rate ({unit}/s)")
 
-        frame = ctk.CTkFrame(self.scrollable_frame)
+        frame = ctk.CTkFrame(self.scrollable_ao_frame)
         existing_names = sorted(self.ao_label_objects.keys(), key=self._natural_sort_key)
         insert_before = None
         for existing in existing_names:
@@ -309,7 +313,7 @@ class SimulatorApp:
         )
         send_btn.grid(row=0, column=3, padx=5)
 
-        dropdown_frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn = create_dropdown(self.scrollable_frame, name)
+        dropdown_frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn = create_dropdown(self.scrollable_ao_frame, name)
         arrow_button = ctk.CTkButton(frame, text="⬇ Ramp", width=20)
         arrow_button.configure(command=lambda f=dropdown_frame, p=frame, b=send_btn, ab=arrow_button: self.toggle_dropdown(f, p, b, ab))
         arrow_button.grid(row=0, column=4, padx=5)
@@ -417,7 +421,7 @@ class SimulatorApp:
         currCol = idx % self._ai_columns_count
         currRow = idx // self._ai_columns_count
 
-        meter_frame = ctk.CTkFrame(self.ai_container, fg_color="transparent", corner_radius=20)
+        meter_frame = ctk.CTkFrame(self.ai_grid_container, fg_color="transparent", corner_radius=20)
         meter_frame.grid(column=currCol, row=currRow, padx=8, pady=8, sticky="nsew")
         meter_frame.grid_columnconfigure(0, weight=1)
         meter_frame.grid_rowconfigure(0, weight=1)
@@ -500,7 +504,7 @@ class SimulatorApp:
     def _refresh_ai_layout(self):
         """Repack AI meters in a consistent grid layout with fixed sizing."""
         # Clear existing grid placements
-        for widget in self.ai_container.winfo_children():
+        for widget in self.ai_grid_container.winfo_children():
             widget.grid_forget()
 
         # Grid all meters in sorted order
@@ -512,9 +516,9 @@ class SimulatorApp:
 
         # Ensure consistent sizing
         for c in range(self._ai_columns_count):
-            self.ai_container.grid_columnconfigure(c, weight=1, uniform="col")
+            self.ai_grid_container.grid_columnconfigure(c, weight=1, uniform="col")
         for r in range((len(self.ai_meter_objects) + self._ai_columns_count - 1) // self._ai_columns_count):
-            self.ai_container.grid_rowconfigure(r, weight=1, uniform="row")
+            self.ai_grid_container.grid_rowconfigure(r, weight=1, uniform="row")
 
     def _add_selected_do(self, selection: str):
         """Triggered when the user picks a hidden DO from the dropdown."""
@@ -529,24 +533,19 @@ class SimulatorApp:
         # Mark as visible
         ch_entry.showOnGUI = True
 
-        # Create and pack the switch for this DO
-        motor_status_switch = ctk.CTkSwitch(
-            self.digital_outputs_frame,
-            text=ch_entry.name,
-            onvalue=1,
-            offvalue=0
-        )
-        motor_status_switch.bind(
-            "<Button-3>", lambda e, n=selection, sw=motor_status_switch: self.prompt_rename(n, sw)
-        )
+        container = ctk.CTkFrame(self.scrollable_do_frame, fg_color="transparent")
+        container.pack(side="left", padx=8, pady=8)
 
-        motor_status_switch.configure(
-            command=lambda n=selection, switchObj=motor_status_switch:
-                self.toggle_do_switch(n, switchObj)
-        )
-        motor_status_switch.pack(side="left", padx=10, expand=True)
-        motor_status_switch.select()
-        self.do_switches[selection] = motor_status_switch
+        label = ctk.CTkLabel(container, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 11))
+        label.pack(side="left")
+        label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+
+        switch = ctk.CTkSwitch(container, text="", width=50, height=26)
+        switch.pack(side="right", padx=(0, 8))
+
+        switch.configure(command=lambda n=selection, s=switch: self.toggle_do_switch(n, s))
+        switch.select()
+        self.do_switches[selection] = switch
 
         # Update dropdown
         remaining = [v for v in self.add_do_dropdown.cget("values") if v != selection]
@@ -570,23 +569,17 @@ class SimulatorApp:
         # Mark as visible
         ch_entry.showOnGUI = True
 
-        # Create and pack the DI indicator
-        indicator_frame = ctk.CTkFrame(self.digital_inputs_frame)
-        indicator_frame.pack(pady=10, padx=20, side="left", expand=True)
-        indicator_label = ctk.CTkLabel(indicator_frame, text=ch_entry.name)
-        indicator_label.pack(side="left", padx=10)
-        indicator_label.bind("<Button-1>", lambda e, n=selection, lbl=indicator_label: self.prompt_rename(n, lbl))
+        frame = ctk.CTkFrame(self.scrollable_di_frame)
+        frame.pack(side="left", padx=10, pady=10)
 
-        indicator_light = ctk.CTkLabel(
-            indicator_frame,
-            text="",
-            width=20,
-            height=20,
-            corner_radius=10,
-            fg_color="gray"
-        )
-        self.di_label_objects[selection] = indicator_light
-        indicator_light.pack(side="left")
+        label = ctk.CTkLabel(frame, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 12))
+        label.pack(side="left")
+        label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+
+        light = ctk.CTkLabel(frame, text="", width=26, height=26, corner_radius=13, fg_color="gray")
+        light.pack(side="left", padx=5)
+
+        self.di_label_objects[selection] = light
 
         # Update dropdown
         remaining = [v for v in self.add_di_dropdown.cget("values") if v != selection]
@@ -619,16 +612,26 @@ class SimulatorApp:
         else:
             self.add_do_dropdown = None
 
-
+        self.scrollable_do_frame = ctk.CTkScrollableFrame(
+            self.digital_outputs_frame,
+            orientation="horizontal",
+            height=50,           # same height as your DI
+            corner_radius=10
+        )
+        self.scrollable_do_frame.pack(fill="x", expand=True, padx=15, pady=(0,15))
 
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "do" or not ch_entry.showOnGUI:
                 continue
-            motor_status_switch = ctk.CTkSwitch(self.digital_outputs_frame, text=ch_entry.name, onvalue=1, offvalue=0)
-            motor_status_switch.configure(command=lambda n=name, switchObj=motor_status_switch: self.toggle_do_switch(n, switchObj))
-            motor_status_switch.pack(side="left", padx=10, expand=True)
-            motor_status_switch.select()
-            self.do_switches[name] = motor_status_switch
+            container = ctk.CTkFrame(self.scrollable_do_frame, fg_color="transparent")
+            container.pack(side="left", padx=8, pady=8)
+            label = ctk.CTkLabel(container, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 11))
+            label.pack(side="left")
+            switch = ctk.CTkSwitch(container, text="", width=20, height=26)
+            switch.pack(side="right", padx=(0, 8))
+            switch.configure(command=lambda n=name, s=switch: self.toggle_do_switch(n, s))
+            switch.select()
+            self.do_switches[name] = switch
 
     def _populate_digital_inputs(self):
        # Header frame for Digital Inputs (title + dropdown)
@@ -652,18 +655,31 @@ class SimulatorApp:
         else:
             self.add_di_dropdown = None
 
+        self.scrollable_di_frame = ctk.CTkScrollableFrame(
+            self.digital_inputs_frame,
+            orientation="horizontal",
+            height=50,
+            corner_radius=10
+        )
+        self.scrollable_di_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+
 
 
         for name, ch_entry in self.channel_mgr.channels.items():
             if ch_entry.sig_type.lower() != "di" or not ch_entry.showOnGUI:
                 continue
-            indicator_frame = ctk.CTkFrame(self.digital_inputs_frame)
-            indicator_frame.pack(pady=10, padx=20, side="left", expand=True)
-            indicator_label = ctk.CTkLabel(indicator_frame, text=ch_entry.name)
-            indicator_label.pack(side="left", padx=10)
-            indicator_light = ctk.CTkLabel(indicator_frame, text="", width=20, height=20, corner_radius=10, fg_color="gray")
-            self.di_label_objects[name] = indicator_light
-            indicator_light.pack(side="left")
+
+            # Create indicator inside the scrollable frame
+            frame = ctk.CTkFrame(self.scrollable_di_frame)
+            frame.pack(side="left", padx=22, pady=10)
+
+            label = ctk.CTkLabel(frame, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 12))
+            label.pack(side="left")
+
+            light = ctk.CTkLabel(frame, text="", width=26, height=26, corner_radius=13, fg_color="gray")
+            light.pack(side="left", padx=10)
+
+            self.di_label_objects[name] = light
 
     def prompt_rename(self, original_name: str, label_widget):
         """Popup dialog allowing user to rename only dynamically-added signals."""
