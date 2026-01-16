@@ -291,32 +291,47 @@ class SimulatorApp:
             frame.pack(pady=5, fill='x', before=insert_before)
         else:
             frame.pack(pady=5, fill='x')
-        label = ctk.CTkLabel(frame, text=name)
-        label.grid(row=0, column=0, padx=5, sticky="w")
+        # Configure grid columns for consistent alignment
+        frame.grid_columnconfigure(0, minsize=70)
+        frame.grid_columnconfigure(1, minsize=100)
+        frame.grid_columnconfigure(2, minsize=120)
+        frame.grid_columnconfigure(3, minsize=80)
+        frame.grid_columnconfigure(4, minsize=80)
+        
+        # Center signal name within 5-character width
+        centered_name = name.center(5)
+        label = ctk.CTkLabel(frame, text=centered_name, font=("Consolas", 12))
+        label.grid(row=0, column=0, padx=5, sticky="ew")
 
         # enable renaming only for dynamically-added AO
         if removable:
             label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
 
         input_value_entry = ctk.CTkEntry(frame, width=100)
-        input_value_entry.grid(row=0, column=1, padx=5)
+        input_value_entry.grid(row=0, column=1, padx=5, sticky="ew")
 
         unitSelector = ctk.CTkSegmentedButton(
-            frame, values=[f"{ch_entry.units}", "mA"],
-            selected_color="green", selected_hover_color="green"
+            frame,
+            values=[ch_entry.units, "mA"],
+            width=110,                 
+            dynamic_resizing=False,    
+            selected_color="green",
+            selected_hover_color="green"
         )
-        unitSelector.set(f"{ch_entry.units}")
+
+
+        unitSelector.set(ch_entry.units)
 
         send_btn = ctk.CTkButton(
-            frame, text="Send", fg_color="blue",
+            frame, text="Send", fg_color="blue", width=80,
             command=lambda n=name, e=input_value_entry, s=unitSelector: self.place_single(n, e, s)
         )
-        send_btn.grid(row=0, column=3, padx=5)
+        send_btn.grid(row=0, column=3, padx=5, sticky="ew")
 
         dropdown_frame, ddminLabel, ddminEntry, ddmaxLabel, ddmaxEntry, ddrateLabel, ddrateEntry, sendBtn = create_dropdown(self.scrollable_ao_frame, name)
-        arrow_button = ctk.CTkButton(frame, text="⬇ Ramp", width=20)
+        arrow_button = ctk.CTkButton(frame, text="⬇ Ramp", width=80)
         arrow_button.configure(command=lambda f=dropdown_frame, p=frame, b=send_btn, ab=arrow_button: self.toggle_dropdown(f, p, b, ab))
-        arrow_button.grid(row=0, column=4, padx=5)
+        arrow_button.grid(row=0, column=4)
         dropdown_frame.pack_forget()
 
         sendBtn.configure(command=lambda n=name, dmin=ddminEntry, dmax=ddmaxEntry, drate=ddrateEntry, us=unitSelector:
@@ -325,16 +340,18 @@ class SimulatorApp:
         unitSelector.configure(command=lambda unit=unitSelector.get(), dmin=ddminLabel, dmax=ddmaxLabel, drate=ddrateLabel:
                             segmented_button_callback(unit, dmin, dmax, drate))
         segmented_button_callback(ch_entry.units, ddminLabel, ddmaxLabel, ddrateLabel)
-        unitSelector.grid(row=0, column=2, padx=5)
+        unitSelector.grid(row=0, column=2, padx=5, sticky="ew")
 
         if removable:
             remove_btn = ctk.CTkButton(
                 frame,
                 text="Remove",
+                width=70,        
                 fg_color="darkred",
                 command=lambda n=name, f=frame, df=dropdown_frame: self._remove_ao_row(n, f, df)
             )
-            remove_btn.grid(row=0, column=6, padx=5)
+            remove_btn.grid(row=0, column=6, padx=0)
+
 
 
         lastSentLabel = ctk.CTkLabel(frame, text="")
