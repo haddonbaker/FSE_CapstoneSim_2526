@@ -16,11 +16,12 @@ from typing import Dict
 import tkinter as tk
 import customtkinter as ctk
 from tkdial import Meter
-
+from signal_masterkey import SignalMasterKey
 from config_manager import ConfigManager
 from channel_manager import ChannelManager
 from socket_controller import SocketController
 from PacketBuilder import dataEntry, errorEntry  # referenced in queue processing
+from PIL import Image
 
 class SimulatorApp:
     def __init__(self, config_path: str | Path, channel_mgr: ChannelManager, socket_ctrl: SocketController):
@@ -28,6 +29,17 @@ class SimulatorApp:
         self.config = ConfigManager(config_path)  # also accessible, but kept for compatibility
         self.channel_mgr = channel_mgr
         self.socket_ctrl = socket_ctrl
+
+         # Load icon
+        icon_path = self.current_dir / "icons" / "info.png"
+        if icon_path.exists():
+            self.info_icon = ctk.CTkImage(
+                light_image=Image.open(str(icon_path)),
+                dark_image=Image.open(str(icon_path)),
+                size=(20, 20)
+            )
+        else:
+            self.info_icon = None
 
         # runtime settings shortcut
         rs = self.config.runtime_settings
@@ -43,7 +55,6 @@ class SimulatorApp:
         self.di_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.do_switches: Dict[str, ctk.CTkSwitch] = {}
         self.display_name_map = {}     # original_name → UI_display_name
-
 
 
         # queue for responses from socket controller
@@ -93,9 +104,10 @@ class SimulatorApp:
                 self.root.wm_iconbitmap(str(icon_path))
             except Exception:
                 pass
-        self.root.title("GCC Compressor Simulator v1.0")
+        self.root.title("GCC Compressor Simulator v2.0")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
-        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=0)  # top bar - no weight
+        self.root.grid_rowconfigure(1, weight=1)  # main content - expandable
         self.root.grid_columnconfigure(0, weight=1)
 
         # exception handler integration for Tk
@@ -104,10 +116,84 @@ class SimulatorApp:
         # proper shutdown
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown)
 
+                # create top bar with help button
+        self.top_bar = ctk.CTkFrame(self.root, height=40, fg_color="transparent")
+        self.top_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=5)
+        
+        self.help_btn = ctk.CTkButton(
+            self.top_bar,
+            image=self.info_icon if self.info_icon else None,
+            text="ⓘ" if not self.info_icon else "",
+            width=30,
+            height=30,
+            corner_radius=15,
+            fg_color="transparent",
+            hover_color=("gray85", "gray25"),
+            command=self.open_signal_config_popup
+        )
+        self.help_btn.pack(side="left", padx=5)
+        
+        # Add hover text tooltip
+        self._create_tooltip(self.help_btn, "See signal masterkey")
+    
+    def _create_tooltip(self, widget, text):
+        """Create a simple tooltip for a widget with proper cleanup."""
+        tooltip_ref = {"tooltip": None, "after_id": None}
+        
+        def create_tooltip(x, y):
+            # Clean up any existing tooltip
+            if tooltip_ref["tooltip"] is not None:
+                try:
+                    tooltip_ref["tooltip"].destroy()
+                except:
+                    pass
+            
+            tooltip = ctk.CTkToplevel(self.root)
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{x + 10}+{y + 10}")
+            label = ctk.CTkLabel(tooltip, text=text, text_color="white", fg_color="#333333")
+            label.pack(padx=5, pady=3)
+            tooltip_ref["tooltip"] = tooltip
+        
+        def on_enter(event):
+            # Cancel any pending tooltip creation
+            if tooltip_ref["after_id"] is not None:
+                self.root.after_cancel(tooltip_ref["after_id"])
+            
+            # Destroy existing tooltip if any
+            if tooltip_ref["tooltip"] is not None:
+                try:
+                    tooltip_ref["tooltip"].destroy()
+                except:
+                    pass
+                tooltip_ref["tooltip"] = None
+            
+            # Create tooltip with small delay
+            tooltip_ref["after_id"] = self.root.after(500, create_tooltip, event.x_root, event.y_root)
+        
+        def on_leave(event):
+            # Cancel pending tooltip creation
+            if tooltip_ref["after_id"] is not None:
+                self.root.after_cancel(tooltip_ref["after_id"])
+                tooltip_ref["after_id"] = None
+            
+            # Destroy existing tooltip
+            if tooltip_ref["tooltip"] is not None:
+                try:
+                    tooltip_ref["tooltip"].destroy()
+                except:
+                    pass
+                tooltip_ref["tooltip"] = None
+        
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
+
     def _build_frames(self):
+
+        
         # main container
         self.main_frame = ctk.CTkFrame(self.root)
-        self.main_frame.grid(row=0, column=0, sticky="nsew")
+        self.main_frame.grid(row=1, column=0, sticky="nsew")
         self.main_frame.grid_rowconfigure((0, 1, 2, 3), weight=1)
         self.main_frame.grid_columnconfigure((0, 1), weight=1)
 
@@ -726,7 +812,26 @@ class SimulatorApp:
 
         ctk.CTkButton(top, text="OK", command=submit).pack(pady=10)
 
+    def open_signal_config_popup(self):
+        # Prevent multiple popups
+        if hasattr(self, "signal_cfg_popup") and self.signal_cfg_popup.winfo_exists():
+            self.signal_cfg_popup.lift()
+            return
 
+        self.signal_cfg_popup = ctk.CTkToplevel(self.root)
+        self.signal_cfg_popup.title("Signal Configuration")
+        self.signal_cfg_popup.geometry(f"{self.root.winfo_screenwidth()-50}x{self.root.winfo_screenheight()-50}")
+
+        # Keep popup on top of main window
+        self.signal_cfg_popup.transient(self.root)
+        self.signal_cfg_popup.grab_set()
+
+        # Build signal config page inside popup
+        signal_page = SignalMasterKey(
+            self.signal_cfg_popup,
+            self.config.raw.get("signals", [])
+        )
+        signal_page.pack(fill="both", expand=True, padx=10, pady=10)
 
     # UI helpers and command handlers
     def toggle_dropdown(self, frame, parent_frame, sendBtn, arrowBtn):
