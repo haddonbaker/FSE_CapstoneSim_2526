@@ -50,8 +50,11 @@ class SignalMasterKey(ctk.CTkFrame):
     SLOTS_PER_CARD = 8
     CARDS_PER_ROW = 3
     
-    def __init__(self, parent, signals: list[dict]):
+    def __init__(self, parent, signals: list[dict], display_name_map: dict = None):
         super().__init__(parent)
+
+        # Store display name map for showing renamed signals
+        self.display_name_map = display_name_map if display_name_map is not None else {}
 
         self.title = ctk.CTkLabel(
             self,
@@ -76,6 +79,24 @@ class SignalMasterKey(ctk.CTkFrame):
 
         # Group by card
         self._populate_by_card()
+
+    def _get_display_name(self, original_name: str, sig_type: str) -> str:
+        """Get display name, showing generic designation in parentheses for custom signals."""
+        display_name = self.display_name_map.get(original_name, original_name)
+        
+        # Check if signal is generic (starts with AO, AI, DO, DI)
+        generic_prefixes = ("ao", "ai", "do", "di")
+        is_generic = any(display_name.lower().startswith(prefix) for prefix in generic_prefixes)
+        
+        # If signal is custom (not generic), show with generic designation in parentheses
+        if not is_generic:
+            # Count how many signals of this type come before this one
+            generic_number = sum(1 for sig in self.signal_configs 
+                               if sig.sig_type == sig_type and sig.index < self.signal_configs.index(next(sig for sig in self.signal_configs if sig.name == original_name)))
+            generic_name = f"{sig_type.upper()}{generic_number}"
+            return f"{display_name} ({generic_name})"
+        
+        return display_name
 
     def _populate_by_card(self):
         """Organize signals by card and display in a grid."""
@@ -134,8 +155,11 @@ class SignalMasterKey(ctk.CTkFrame):
             
             # Signal rows with larger fonts
             for row_idx, sig in enumerate(sorted(card_signals, key=lambda s: s.card_slot), start=1):
+                # Get display name (with generic designation if custom)
+                display_name = self._get_display_name(sig.name, sig.sig_type)
+                
                 values = [
-                    sig.name,
+                    display_name,
                     sig.card_slot,
                     sig.board_slot,
                     sig.spi_bus

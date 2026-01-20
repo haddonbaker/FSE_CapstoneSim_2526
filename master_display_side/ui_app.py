@@ -12,6 +12,8 @@ import traceback
 from collections import deque
 from pathlib import Path
 from typing import Dict
+from datetime import datetime
+from error_log import ErrorLog
 
 import tkinter as tk
 import customtkinter as ctk
@@ -49,7 +51,7 @@ class SimulatorApp:
         self.poll_buffer_period_ms = rs["poll_buffer_period_ms"]
 
         # UI state
-        self.error_stack = deque(maxlen=self.error_stack_max_len)
+        self.error_stack = deque(maxlen=self.error_stack_max_len)  # Now stores dicts: {"message": str, "timestamp": str}
         self.ai_meter_objects: Dict[str, Meter] = {}
         self.ao_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.di_label_objects: Dict[str, ctk.CTkLabel] = {}
@@ -135,6 +137,31 @@ class SimulatorApp:
         
         # Add hover text tooltip
         self._create_tooltip(self.help_btn, "See signal masterkey")
+
+        # Error button
+        error_icon_path = self.current_dir / "icons" / "circle-alert.png"
+        if error_icon_path.exists():
+            self.error_icon = ctk.CTkImage(
+                light_image=Image.open(str(error_icon_path)),
+                dark_image=Image.open(str(error_icon_path)),
+                size=(20, 20)
+            )
+        else:
+            self.error_icon = None
+        
+        self.error_btn = ctk.CTkButton(
+            self.top_bar,
+            image=self.error_icon if self.error_icon else None,
+            text="⚠" if not self.error_icon else "",
+            width=30,
+            height=30,
+            corner_radius=15,
+            fg_color="transparent",
+            hover_color=("gray85", "gray25"),
+            command=self.open_error_log_popup
+        )
+        self.error_btn.pack(side="left", padx=5)
+        self._create_tooltip(self.error_btn, "View error log")
     
     def _create_tooltip(self, widget, text):
         """Create a simple tooltip for a widget with proper cleanup."""
@@ -788,29 +815,52 @@ class SimulatorApp:
         """Popup dialog allowing user to rename only dynamically-added signals."""
         top = ctk.CTkToplevel(self.root)
         top.title("Rename Signal")
-        top.geometry("300x150")
+        top.geometry("300x200")
 
         ctk.CTkLabel(top, text=f"Rename {original_name}").pack(pady=10)
 
         entry = ctk.CTkEntry(top)
         entry.pack(pady=5)
         
+        # Error message label
+        error_label = ctk.CTkLabel(top, text="", text_color="red", font=("Consolas", 10))
+        error_label.pack(pady=5)
+        
         # move popup to the front
         top.after(100, top.lift)
         # Pre-fill with existing renamed value or the original name
-        entry.insert(0, self.display_name_map.get(original_name, original_name))
+        current_name = self.display_name_map.get(original_name, original_name)
+        entry.insert(0, current_name)
+
+        submit_btn = ctk.CTkButton(top, text="OK")
+        submit_btn.pack(pady=10)
+
+        def validate_and_update(*args):
+            """Validate input and update error message and button state."""
+            new_name = entry.get().strip()
+            
+            if len(new_name) > 5:
+                error_label.configure(text=f"Max 5 characters ({len(new_name)}/5)")
+                submit_btn.configure(state="disabled")
+            else:
+                error_label.configure(text="")
+                submit_btn.configure(state="normal")
 
         def submit():
             new_name = entry.get().strip()
-            if new_name:
+            if new_name and len(new_name) <= 5:
                 self.display_name_map[original_name] = new_name
-
                 # Switch widgets use .configure(text=...)
                 label_widget.configure(text=new_name)
-
             top.destroy()
 
-        ctk.CTkButton(top, text="OK", command=submit).pack(pady=10)
+        # Bind validation to every keystroke
+        entry.bind("<KeyRelease>", validate_and_update)
+        
+        # Run validation once on initial load
+        validate_and_update()
+        
+        submit_btn.configure(command=submit)
 
     def open_signal_config_popup(self):
         # Prevent multiple popups
@@ -826,10 +876,11 @@ class SimulatorApp:
         self.signal_cfg_popup.transient(self.root)
         self.signal_cfg_popup.grab_set()
 
-        # Build signal config page inside popup
+        # Build signal config page inside popup, passing display_name_map for renamed signals
         signal_page = SignalMasterKey(
             self.signal_cfg_popup,
-            self.config.raw.get("signals", [])
+            self.config.raw.get("signals", []),
+            display_name_map=self.display_name_map
         )
         signal_page.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -920,11 +971,36 @@ class SimulatorApp:
             self.error_clear_btn.pack_forget()
         else:
             self.error_clear_btn.pack(padx=10, side="right")
-            self.error_stack.append(message)
+            # Store error with timestamp
+            error_entry = {
+                "message": message,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            self.error_stack.append(error_entry)
         if len(self.error_stack) >= self.error_stack_max_len:
             self.error_frame_label.configure(text=f"Errors ({len(self.error_stack)}+)")
         else:
             self.error_frame_label.configure(text=f"Errors ({len(self.error_stack)})")
+    def open_error_log_popup(self):
+        # Prevent multiple popups
+        if hasattr(self, "error_log_popup") and self.error_log_popup.winfo_exists():
+            self.error_log_popup.lift()
+            return
+
+        self.error_log_popup = ctk.CTkToplevel(self.root)
+        self.error_log_popup.title("Error Log")
+        self.error_log_popup.geometry(f"{self.root.winfo_screenwidth()-50}x{self.root.winfo_screenheight()-50}")
+
+        # Keep popup on top of main window
+        self.error_log_popup.transient(self.root)
+        self.error_log_popup.grab_set()
+
+        # Build error log page inside popup
+        error_log_page = ErrorLog(
+            self.error_log_popup,
+            self.error_stack
+        )
+        error_log_page.pack(fill="both", expand=True, padx=10, pady=10)
 
     def show_connection_status(self, online: bool | None, message: str = ""):
         if online is None:
