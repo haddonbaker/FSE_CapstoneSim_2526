@@ -5,6 +5,7 @@ import socket
 import threading
 import time
 import queue
+from pathlib import Path
 from datetime import datetime # for creation of logging filename
 
 # libraries required to perform network ping
@@ -20,11 +21,21 @@ from channel_definitions import Channel_Entry # the configuration that defines w
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
 
 
-
 class SocketSenderManager:
+    # Ensure logs directory exists
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    log_file = log_dir / f'instance_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log'
+
+    logging.basicConfig(
+        filename=log_file,
+        encoding='utf-8',
+        level=logging.DEBUG
+    )
     logger = logging.getLogger(__name__)
-    logging.basicConfig(filename=f'logs/instance_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log', 
-                        encoding='utf-8', level=logging.DEBUG)
+    # logging.basicConfig(filename=f'logs/instance_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log', 
+    #                     encoding='utf-8', level=logging.DEBUG)
 
     def __init__(self, host:str, port:int, q: queue.Queue, socketTimeout:float=5, 
                  testSocketOnInit:bool=True, loopDelay:float=0.1,
