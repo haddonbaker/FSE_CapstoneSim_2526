@@ -43,6 +43,17 @@ class SimulatorApp:
         else:
             self.info_icon = None
 
+        # Load pencil icon for renaming
+        pencil_icon_path = self.current_dir / "icons" / "pencil.png"
+        if pencil_icon_path.exists():
+            self.pencil_icon = ctk.CTkImage(
+                light_image=Image.open(str(pencil_icon_path)),
+                dark_image=Image.open(str(pencil_icon_path)),
+                size=(16, 16)
+            )
+        else:
+            self.pencil_icon = None
+
         # runtime settings shortcut
         rs = self.config.runtime_settings
         self.error_stack_max_len = rs["error_stack_max_len"]
@@ -342,24 +353,33 @@ class SimulatorApp:
             meter_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
             meter_frame.grid_propagate(False)
 
-            bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
-            meter_holder = tk.Frame(meter_frame, bg=bg_color)
-            meter_holder.pack(expand=True, fill="both", padx=6, pady=6)
+            bg_color = self.root._apply_appearance_mode(
+                ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
+            )
+
+            # Centered vertical container for meter + label
+            content = tk.Frame(meter_frame, bg=bg_color)
+            content.pack(expand=True)
 
             meter = Meter(
-                meter_holder,
+                content,
                 scroll_steps=0,
                 interactive=False,
                 radius=140,
                 text_font=("Consolas", 14),
                 integer=False
             )
-            meter.pack(expand=True, fill="both")
+            meter.pack(pady=(0, 6))
 
-            label = ctk.CTkLabel(meter_frame, text=name, font=("Consolas", 14))
-            label.pack(pady=(4, 0))
+            label = ctk.CTkLabel(
+                content,
+                text=name,
+                font=("Consolas", 14)
+            )
+            label.pack()
 
             self.ai_meter_objects[name] = meter
+
 
 
 
@@ -373,6 +393,7 @@ class SimulatorApp:
             ddmaxLabel = ctk.CTkLabel(frame, text="Maximum Value")
             ddmaxLabel.pack()
             ddmaxEntry = ctk.CTkEntry(frame, width=100)
+            ddmaxEntry.pack()
             ddrateLabel = ctk.CTkLabel(frame, text="Rate")
             ddrateLabel.pack()
             ddrateEntry = ctk.CTkEntry(frame, width=100)
@@ -405,29 +426,68 @@ class SimulatorApp:
         else:
             frame.pack(pady=5, fill='x')
         # Configure grid columns for consistent alignment
-        frame.grid_columnconfigure(0, minsize=70)
-        frame.grid_columnconfigure(1, minsize=100)
+        frame.grid_columnconfigure(0, minsize=130)  # Reserve space for name + icon
+        frame.grid_columnconfigure(1, minsize=110)  # Reserve space for 100px entry
         frame.grid_columnconfigure(2, minsize=120)
         frame.grid_columnconfigure(3, minsize=80)
         frame.grid_columnconfigure(4, minsize=80)
-        
-        # Center signal name within 5-character width
-        centered_name = name.center(5)
-        label = ctk.CTkLabel(frame, text=centered_name, font=("Consolas", 12))
-        label.grid(row=0, column=0, padx=5, sticky="ew")
+        frame.grid_columnconfigure(5, minsize=75)
+        frame.grid_columnconfigure(6, weight=1)
 
-        # enable renaming only for dynamically-added AO
+        # --- Name Label + Rename Icon/Placeholder ---
+        # This frame has a fixed width to ensure all rows align vertically.
+        name_frame = ctk.CTkFrame(frame, fg_color="transparent", width=65, height=28)
+        name_frame.grid(row=0, column=0, padx=(5, 0), sticky="w")
+        name_frame.grid_propagate(False)  # Prevent child widgets from resizing this frame
+
+        # Use an inner grid to position the label and icon/placeholder
+        name_frame.grid_columnconfigure(0, weight=1)  # Name column
+        name_frame.grid_columnconfigure(1, weight=0)  # Icon column
+
+        display_name = self.display_name_map.get(name, name)
+        label = ctk.CTkLabel(name_frame, text=display_name, font=("Consolas", 12))
+
         if removable:
-            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+            # Left-align name for removable signals
+            label.configure(anchor="w")
+            label.grid(row=0, column=0, sticky="w")
 
-        input_value_entry = ctk.CTkEntry(frame, width=100)
+            # Pencil icon as a button for hover effects
+            pencil_button = ctk.CTkButton(
+                name_frame,
+                text="",
+                image=self.pencil_icon,
+                width=22,
+                height=22,
+                fg_color="transparent",
+                hover_color=("gray85", "gray25"),
+                command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
+            )
+            pencil_button.grid(row=0, column=1, padx=(2, 0))
+
+            # Bind rename to text label as well
+            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+            label.configure(cursor="hand2")
+            pencil_button.configure(cursor="hand2")
+            self._create_tooltip(label, "Click to rename")
+            self._create_tooltip(pencil_button, "Click to rename")
+        else:
+            # Right-align name for pre-loaded signals to reduce gap to input field
+            label.configure(anchor="e")
+            label.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+
+            # Add a placeholder to ensure alignment with pencil icons in other rows
+            placeholder = ctk.CTkFrame(name_frame, fg_color="transparent", width=24, height=24)
+            placeholder.grid(row=0, column=1)
+
+        input_value_entry = ctk.CTkEntry(frame, width=60)
         input_value_entry.grid(row=0, column=1, padx=5, sticky="ew")
 
         unitSelector = ctk.CTkSegmentedButton(
             frame,
             values=[ch_entry.units, "mA"],
-            width=110,                 
-            dynamic_resizing=False,    
+            width=110,
+            dynamic_resizing=False,
             selected_color="green",
             selected_hover_color="green"
         )
@@ -459,13 +519,11 @@ class SimulatorApp:
             remove_btn = ctk.CTkButton(
                 frame,
                 text="Remove",
-                width=70,        
+                width=70,
                 fg_color="darkred",
                 command=lambda n=name, f=frame, df=dropdown_frame: self._remove_ao_row(n, f, df)
             )
-            remove_btn.grid(row=0, column=6, padx=0)
-
-
+            remove_btn.grid(row=0, column=5, padx=(5))
 
         lastSentLabel = ctk.CTkLabel(frame, text="")
         lastSentLabel.grid(row=0, column=5, padx=5, sticky="e")
@@ -546,53 +604,78 @@ class SimulatorApp:
         # Mark as visible
         ch_entry.showOnGUI = True
 
-        # Use the same column/row math as populate to avoid replacing existing meters
+        # Same row/column logic as initial populate
         idx = len(self.ai_meter_objects)
         currCol = idx % self._ai_columns_count
         currRow = idx // self._ai_columns_count
 
-        meter_frame = ctk.CTkFrame(self.ai_grid_container, fg_color="transparent", corner_radius=20)
+        meter_frame = ctk.CTkFrame(
+            self.ai_grid_container,
+            fg_color="transparent",
+            corner_radius=20
+        )
         meter_frame.grid(column=currCol, row=currRow, padx=8, pady=8, sticky="nsew")
+
         meter_frame.grid_columnconfigure(0, weight=1)
         meter_frame.grid_rowconfigure(0, weight=1)
 
-        # Create a plain Tkinter frame as the Meter's container (inside the CTk frame)
-        
-        meter_parent = tk.Frame(meter_frame)
-        meter_parent.grid(row=0, column=0, sticky="nsew")
+        # Appearance-correct background for tk widgets
+        bg_color = self.root._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
+        )
 
-        # Create a small plain tk.Frame *inside* the CTkFrame for compatibility
-        bg_color = self.root._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
-        meter_holder = tk.Frame(meter_frame, bg=bg_color)
-        meter_holder.grid(row=0, column=0, sticky="nsew")
+        # ---- CENTERED CONTENT (meter + name) ----
+        content = tk.Frame(meter_frame, bg=bg_color)
+        content.grid(row=0, column=0, sticky="n")
 
-        # Now put the Meter inside that holder
         meter = Meter(
-            meter_holder,
+            content,
             scroll_steps=0,
             interactive=False,
             radius=140,
-            text_font=("Consolas", 14),  # tkmeter only supports standard font tuples
+            text_font=("Consolas", 14),
             integer=False
         )
-        meter.pack(expand=True, fill="both", padx=6, pady=6)
-        label = ctk.CTkLabel(meter_frame, text=selection, font=("Consolas", 14))
-        label.grid(row=1, column=0, pady=(4, 0))
+        meter.pack(pady=(6, 4))
+
+        # ---- NAME + RENAME BUTTON (centered under meter) ----
+        name_frame = ctk.CTkFrame(content, fg_color="transparent")
+        name_frame.pack()
+
+        display_name = self.display_name_map.get(selection, selection)
+        label = ctk.CTkLabel(name_frame, text=display_name, font=("Consolas", 14))
+        label.pack(side="left")
+
+        pencil_button = ctk.CTkButton(
+            name_frame,
+            text="",
+            image=self.pencil_icon,
+            width=22,
+            height=22,
+            fg_color="transparent",
+            hover_color=("gray85", "gray25"),
+            command=lambda n=selection, lbl=label: self.prompt_rename(n, lbl)
+        )
+        pencil_button.pack(side="left", padx=(2, 0))
+
         label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+        label.configure(cursor="hand2")
+        pencil_button.configure(cursor="hand2")
+        self._create_tooltip(label, "Click to rename")
+        self._create_tooltip(pencil_button, "Click to rename")
 
-        
-
+        # ---- REMOVE BUTTON ----
         remove_btn = ctk.CTkButton(
             meter_frame,
             text="Remove",
             fg_color="darkred",
             command=lambda n=selection, f=meter_frame: self._remove_ai_meter(n, f)
         )
-        remove_btn.grid(row=2, column=0, pady=(4, 6))
+        remove_btn.grid(row=1, column=0, pady=(4, 6))
 
         self.ai_meter_objects[selection] = meter
 
-        # Update dropdown: remove the added one
+        # Update dropdown
         remaining = [v for v in self.add_ai_dropdown.cget("values") if v != selection]
         if remaining:
             self.add_ai_dropdown.configure(values=remaining)
@@ -600,6 +683,7 @@ class SimulatorApp:
         else:
             self.add_ai_dropdown.destroy()
             self.add_ai_dropdown = None
+
     def _remove_ai_meter(self, name, frame):
         """Remove a dynamically added AI meter."""
         frame.destroy()
@@ -666,9 +750,23 @@ class SimulatorApp:
         container = ctk.CTkFrame(self.scrollable_do_frame, fg_color="transparent")
         container.pack(side="left", padx=8, pady=8)
 
-        label = ctk.CTkLabel(container, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 11))
+        name_frame = ctk.CTkFrame(container, fg_color="transparent")
+        name_frame.pack(side="left")
+
+        display_name = self.display_name_map.get(ch_entry.name, ch_entry.name)
+        label = ctk.CTkLabel(name_frame, text=display_name, width=30, anchor="w", font=("Consolas", 11))
         label.pack(side="left")
+
+        pencil_button = ctk.CTkButton(name_frame, text="", image=self.pencil_icon, width=20, height=20,
+                                      fg_color="transparent", hover_color=("gray85", "gray25"),
+                                      command=lambda n=selection, lbl=label: self.prompt_rename(n, lbl))
+        pencil_button.pack(side="left", padx=(2, 0))
+
         label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+        label.configure(cursor="hand2")
+        pencil_button.configure(cursor="hand2")
+        self._create_tooltip(label, "Click to rename")
+        self._create_tooltip(pencil_button, "Click to rename")
 
         switch = ctk.CTkSwitch(container, text="", width=50, height=26)
         switch.pack(side="right", padx=(0, 8))
@@ -702,9 +800,23 @@ class SimulatorApp:
         frame = ctk.CTkFrame(self.scrollable_di_frame)
         frame.pack(side="left", padx=10, pady=10)
 
-        label = ctk.CTkLabel(frame, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 12))
+        name_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        name_frame.pack(side="left")
+
+        display_name = self.display_name_map.get(ch_entry.name, ch_entry.name)
+        label = ctk.CTkLabel(name_frame, text=display_name, width=30, anchor="w", font=("Consolas", 12))
         label.pack(side="left")
+
+        pencil_button = ctk.CTkButton(name_frame, text="", image=self.pencil_icon, width=20, height=20,
+                                      fg_color="transparent", hover_color=("gray85", "gray25"),
+                                      command=lambda n=selection, lbl=label: self.prompt_rename(n, lbl))
+        pencil_button.pack(side="left", padx=(2, 0))
+
         label.bind("<Button-1>", lambda e, n=selection, lbl=label: self.prompt_rename(n, lbl))
+        label.configure(cursor="hand2")
+        pencil_button.configure(cursor="hand2")
+        self._create_tooltip(label, "Click to rename")
+        self._create_tooltip(pencil_button, "Click to rename")
 
         light = ctk.CTkLabel(frame, text="", width=26, height=26, corner_radius=13, fg_color="gray")
         light.pack(side="left", padx=5)

@@ -384,13 +384,13 @@
             "slope_calib_constant": 1
         },
         {
-            "name": "DO0",
+            "name": "MTR1",
             "sig_type": "do",
             "boardSlotPosition": 40,
             "engineeringUnits": null,
             "engineeringUnitsLowAmount": 0,
             "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
+            "showOnGUI": true
         },
         {
             "name": "DO1",
