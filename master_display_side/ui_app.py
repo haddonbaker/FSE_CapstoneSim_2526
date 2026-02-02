@@ -334,7 +334,7 @@ class SimulatorApp:
         self.ai_grid_container = ctk.CTkFrame(self.scrollable_ai_frame, fg_color="transparent")
         self.ai_grid_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self._ai_columns_count = 3
+        self._ai_columns_count = 4
         for i in range(self._ai_columns_count):
             self.ai_grid_container.grid_columnconfigure(i, weight=1, uniform="ai_col")
 
