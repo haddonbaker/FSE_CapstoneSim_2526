@@ -5,11 +5,35 @@
  **Team members:** Ian Armour, Haddon Baker, James Laird, Kendall Kauffmann, Jacob Schroeder 
  ## IMPORTANT
  This is the second iteration of the Compressor Simulator Project. Previous docs will be preserved but will include different formatting so that the new team's work is distinguishable from the old team's work. 
-<!-- BEGIN OLD DOCS -->
- ## Purpose
+
+
+## Purpose
 
 The FS-Elliott company needed a space-efficient way to test the control panels it produces that control its industrial air compresssors.  They requested a digitally-controlled device that can replicate the electrical signals produced by an air compressor. By attaching the simulator to the control panel, the behavior can be verified without having to connect an actual air compressor.
 
+## Architecture
+This repository contains all of the software designed and implemented for both the GUI and Raspberry Pi side. The block diagram below depicts the various flows of signals between input and output, out to the R1000 and in to the Raspberry Pi. Ethernet is still the method of communication used between the Pi and the control laptop. 
+
+<img width="700" alt="gui_populated" src="GUI pics\image.png"/>
+
+## Graphical User Interface
+Below is an image of the current state of the graphical user interface, with revisions from last year's simulator. Not only can signals be configured using the default_config.json file, but also by using the dropdowns and other buttons on the user interface. Looking at the old screengrab of the 24/25 GUI gives a good comparison of what has changed since last year. Additionally, there is an error popup and a signal masterkey popup.
+
+- GUI homescreen
+
+<img width="700" alt="gui_populated" src="GUI pics\image-1.png"/>
+
+
+- Signal Masterkey Popup
+
+<img width="700" alt="gui_populated" src="GUI pics\image-2.png"/>
+
+- Error Popup
+
+<img width="700" alt="gui_populated" src="GUI pics\image-3.png"/>
+
+# --Begin 2024-2025 docs--
+ 
  ## System Architecture
 This project required design of both electrical hardware and software, although this repo contains only the software.  The simulator has two parts: a custom control panel that contains a Raspberry Pi and custom I/O hardware, and a user-operated laptop that controls the simulator.  The two parts communicate over ethernet. Below is a block diagram of the software architecture and behavior:
 
