@@ -25,6 +25,8 @@ from socket_controller import SocketController
 from PacketBuilder import dataEntry, errorEntry  # referenced in queue processing
 from PIL import Image
 
+debug_statements = 1
+
 class SimulatorApp:
     def __init__(self, config_path: str | Path, channel_mgr: ChannelManager, socket_ctrl: SocketController):
         self.current_dir = Path(__file__).resolve().parent
@@ -1159,22 +1161,30 @@ class SimulatorApp:
                         print("received ack packet")
                     continue
                 if chEntry.sig_type.lower() == "ai":
-                    meterObj = self.ai_meter_objects[chEntry.name]
-                    meterObj.set(chEntry.mA_to_EngineeringUnits(sockResp.val))
+                    if debug_statements == 1:
+                        print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val:.2f} mA")
+                    if chEntry.name in self.ai_meter_objects:
+                        meterObj = self.ai_meter_objects[chEntry.name]
+                        meterObj.set(chEntry.mA_to_EngineeringUnits(sockResp.val))
                 elif chEntry.sig_type.lower() == "di":
-                    if int(sockResp.val) == 1:
-                        self.di_label_objects[chEntry.name].configure(fg_color="green")
-                    else:
-                        self.di_label_objects[chEntry.name].configure(fg_color="gray")
+                    if debug_statements == 1:
+                        print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}")
+                    if chEntry.name in self.di_label_objects:
+                        if int(sockResp.val) == 1:
+                            self.di_label_objects[chEntry.name].configure(fg_color="green")
+                        else:
+                            self.di_label_objects[chEntry.name].configure(fg_color="gray")
                 elif chEntry.sig_type.lower() == "do":
                     # response is ack from RPi
-                    self.do_switches[chEntry.name].configure(state="normal")
+                    if chEntry.name in self.do_switches:
+                        self.do_switches[chEntry.name].configure(state="normal")
                 elif "ao" in chEntry.sig_type.lower():
                     labelObj = self.ao_label_objects.get(chEntry.name)
-                    if sockResp.val == "NAK":
-                        labelObj.configure(text="ERR")
-                    else:
-                        labelObj.configure(text=f"{sockResp.val:.1f} mA")
+                    if labelObj:
+                        if sockResp.val == "NAK":
+                            labelObj.configure(text="ERR")
+                        else:
+                            labelObj.configure(text=f"{sockResp.val:.1f} mA")
 
         # schedule periodic reads for ai and di channels
         for name, meter in self.ai_meter_objects.items():

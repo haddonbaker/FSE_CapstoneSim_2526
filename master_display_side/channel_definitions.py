@@ -6,29 +6,6 @@ class Channel_Entry:
     could send or receive to/from the simulator.  
     '''
 
-    # don't touch this dictionary unless you know what you're doing!
-    # the ribbon cables that connect the RPi to the carrier board
-    # will not need to change during normal usage
-    _slot2gpio = {
-    11: "GPIO4",
-    12: "GPIO14",
-    13: "GPIO15",
-    14: "GPIO17",
-    15: "GPIO18",
-    16: "GPIO27",
-    21: "GPIO22",
-    22: "GPIO23",
-    23: "GPIO24",
-    24: "GPIO25",
-    25: "GPIO8",
-    26: "GPIO7",
-    31: "GPIO5",
-    32: "GPIO6",
-    33: "GPIO12",
-    34: "GPIO13",
-    35: "GPIO19",
-    36: "GPIO16"
-    }
 
     def __init__(self, name : str, boardSlotPosition : int, sig_type : str, units : str | None,
                  realUnitsLowAmount : str | None, realUnitsHighAmount : str | None, showOnGUI:bool=True, 
@@ -56,7 +33,7 @@ class Channel_Entry:
         self.realUnitsHighAmount = realUnitsHighAmount
         self.showOnGUI = showOnGUI
 
-        self.gpio = self._slot2gpio.get(boardSlotPosition)
+        self.gpio = self._compute_logical_id()
     
         # constants for linear calibration model are only available for input signals, especially analog ones
         # calibration function transforms raw reading (from RPi) into corrected reading to be displayed on GUI
@@ -65,6 +42,29 @@ class Channel_Entry:
             self.offset_calib_constant = float(offset_calib_constant)
             self.slope_calib_constant = float(slope_calib_constant)
             self.useCalibration = True
+
+    def _compute_logical_id(self) -> str | None:
+        """
+        Computes the logical ID string (e.g., 'SPI1_CARD1_SLOT1') based on signal type and board slot.
+        Inputs (AI, DI) -> SPI 1
+        Outputs (AO, DO) -> SPI 2
+        Card and Slot are derived from boardSlotPosition (Card * 10 + Slot).
+        """
+        if self.boardSlotPosition is None:
+            return None
+
+        # Determine SPI Bus
+        st = self.sig_type.lower()
+        if st.endswith("i"):   # ai, di
+            spi_bus = 1
+        else:                  # ao, do
+            spi_bus = 2
+
+        # Determine Card and Slot
+        card_num = self.boardSlotPosition // 10
+        card_slot = self.boardSlotPosition % 10
+        
+        return f"SPI{spi_bus}_CARD{card_num}_SLOT{card_slot}"
         
     def convert_to_packetUnits(self, val):
         # analog (mA) values are converted from engineering units to a mA value
@@ -114,7 +114,7 @@ class Channel_Entry:
     
     
     def getGPIOStr(self):
-        return self._slot2gpio.get(self.boardSlotPosition)
+        return self.gpio
     
     def __str__(self):
         return f"Channel_Entry object: {self.name} at board slot position {self.boardSlotPosition} with GPIO {self.gpio}"
@@ -133,7 +133,7 @@ class Channel_Entries:
         ch = self.channels.get(sigName)
         if ch is None:
             return None
-        return ch.getGPIOStr_from_slotPosition(slotPosition = ch.boardSlotPosition)
+        return ch.getGPIOStr()
 
     def get_channelEntry_from_GPIOstr(self, gpio_str:str):
         # used by the gui to retrieve the name of the signal

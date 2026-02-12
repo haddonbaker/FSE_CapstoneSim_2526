@@ -20,6 +20,8 @@ from CommandQueue import CommandQueue
 from channel_definitions import Channel_Entry # the configuration that defines which signals are connected to the Carrier board
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
 
+debug_statements = 1
+
 
 class SocketSenderManager:
     # Ensure logs directory exists
@@ -103,6 +105,11 @@ class SocketSenderManager:
     def place_ramp(self, ch2send: Channel_Entry, start_mA:float, stop_mA:float, stepPerSecond_mA:float) -> bool:
         '''Note: all values must be in mA. Returns True if successful. False if bounding error.'''
 
+        if debug_statements == 1:
+            print(f"DEBUG [place_ramp]: Signal={ch2send.name}, Type={ch2send.sig_type}")
+            print(f"    Start={start_mA}mA, Stop={stop_mA}mA, Rate={stepPerSecond_mA}mA/s")
+            print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+
         if stepPerSecond_mA == 0:
             if self.log: self.logger.warning("place_ramp: zero requested as a step value")
             return False
@@ -140,6 +147,16 @@ class SocketSenderManager:
         returns true iff the place request was successful. False if value out of bounds.
         '''
 
+        if debug_statements == 1:
+            if ch2send.sig_type.lower() == "di":
+                print(f"DEBUG [place_single_EngineeringUnits]: Signal={ch2send.name}, Type={ch2send.sig_type}")
+                print(f"    Action=POLL (Value={val_in_eng_units} ignored by RPi)")
+                print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+            else:
+                print(f"DEBUG [place_single_EngineeringUnits]: Signal={ch2send.name}, Type={ch2send.sig_type}")
+                print(f"    Value={val_in_eng_units} {ch2send.units}")
+                print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+
         if ch2send.sig_type.lower() == "ao" and not ch2send.isValidEngineeringUnits(val_in_eng_units):
             return (False, f"Value requested ({val_in_eng_units} {ch2send.units}) for {ch2send.name} must be between {ch2send.realUnitsLowAmount} and {ch2send.realUnitsHighAmount} {ch2send.units}.")
         if ch2send.getGPIOStr() is None:
@@ -155,6 +172,11 @@ class SocketSenderManager:
         # first element of returned tuple is success status: True if no errors. Second element in
         # tuple is error string (None if no error)
         # Engineering units to mA conversion happens on the master side. RPi receives only mA values.
+        if debug_statements == 1 and ch2send.sig_type.lower() != "ai":
+            print(f"DEBUG [place_single_mA]: Signal={ch2send.name}, Type={ch2send.sig_type}")
+            print(f"    Value={mA_val} mA")
+            print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+
         if not ch2send.isValidmA(mA_val):
             return (False, f"mA value requested ({mA_val} mA) for {ch2send.name} must be between 4.0 and 20.0 mA.")
         if ch2send.getGPIOStr() is None:

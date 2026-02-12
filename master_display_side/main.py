@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # socket controller configuration 
     # consider moving host/port into config.json
-    host = "192.168.80.1"
+    host = "192.168.137.10"
     port = 5000
 
     # use 3s default
