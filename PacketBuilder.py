@@ -1,4 +1,4 @@
-from PacketBuilder_utils import chType_from_logical_id
+from RPI_side.PacketBuilder_utils import chType_from_logical_id
 # -*- coding: utf-8 -*-
 """
 Created on Sat Oct 19 12:49:44 2024

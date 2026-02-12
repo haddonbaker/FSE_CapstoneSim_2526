@@ -8,7 +8,7 @@ import sys
 sys.path.append("..") # include parent directory in path
 
 from PacketBuilder import dataEntry, errorEntry
-from PacketBuilder_utils import card_pos_from_logical_id, chType_from_logical_id, slot_from_logical_id, spi_from_logical_id
+from RPI_side.PacketBuilder_utils import card_pos_from_logical_id, chType_from_logical_id, slot_from_logical_id, spi_from_logical_id
 from gpio_manager import GPIO_Manager
 from module_drivers.T_Click_1 import T_CLICK_1
 from module_drivers.Digital_Input_Module import Digital_Input_Module
