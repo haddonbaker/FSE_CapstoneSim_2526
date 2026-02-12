@@ -1,8 +1,11 @@
-# interactively interface with a single Mikroe T-Click 1 using an arbitrary CS pin
+# interactively interface with a single Mikroe T-Click 1 using SN54LS138 demultiplexer for chip selection
 # Note: the MCP4921's SPI interface is three-wire (i.e. no MISO)
+# OLD VERSION: used an arbitrary CS pin (direct GPIO control)
 
 import spidev
 import gpiozero # because RPi.GPIO is unsupported on RPi5
+
+from .SN54LS138_Demux import SN54LS138_Demux
 
 class T_CLICK_1:
     R_IN = 20E3 # ohms
@@ -13,12 +16,30 @@ class T_CLICK_1:
     CURRENT_OUTPUT_RANGE_MIN = 2 # arbitrarily chosen
     CURRENT_OUTPUT_RANGE_MAX = 20.048 # calculated from pcb component choices
     
-    def __init__(self, gpio_cs_pin, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
+    # OLD DIRECT GPIO CS PIN VERSION:
+    # def __init__(self, gpio_cs_pin, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
+    #     ''' T_CLICK_1 board has an MCP4921 (12-bit DAC) that feeds an XTR116 loop driver (voltage-to-current converter).
+    #     This class provides a single function, `write_mA`, that considers both chips' behaviors. 
+    #     
+    #     Inputs: (see MCP4921 datasheet)
+    #     gpio_cs_pin : gpio pin object used for chip select
+    #     spi : spidev object to use for the SPI communication
+    #     SHDNB : Shutdown Bar
+    #     GAB : GA Bar "Output Gain Select bit"; if 1, no gain. If 0, 2x gain
+    #         Note: V_ref on T_Click board is 4.096 V, so no gain is needed
+    #     BUF : whether to use input buffer (limits output voltage swing) default is 0 (unbuffered)
+    #     
+    #     '''
+    #     self.gpio_cs_pin = gpio_cs_pin
+    #     self.spi_master = spi
+    
+    def __init__(self, demux_controller : SN54LS138_Demux, demux_output : int, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
         ''' T_CLICK_1 board has an MCP4921 (12-bit DAC) that feeds an XTR116 loop driver (voltage-to-current converter).
         This class provides a single function, `write_mA`, that considers both chips' behaviors. 
         
         Inputs: (see MCP4921 datasheet)
-        gpio_cs_pin : gpio pin object used for chip select
+        demux_controller : SN54LS138_Demux instance to manage chip selection
+        demux_output : which demux output (0-7) this module is connected to
         spi : spidev object to use for the SPI communication
         SHDNB : Shutdown Bar
         GAB : GA Bar "Output Gain Select bit"; if 1, no gain. If 0, 2x gain
@@ -26,7 +47,8 @@ class T_CLICK_1:
         BUF : whether to use input buffer (limits output voltage swing) default is 0 (unbuffered)
         
         '''
-        self.gpio_cs_pin = gpio_cs_pin
+        self.demux_controller = demux_controller
+        self.demux_output = demux_output
         self.spi_master = spi
 
         self.SHDNB = SHDNB
@@ -66,9 +88,15 @@ class T_CLICK_1:
         
         bytesList = [int(b) for b in asBytes] # separate into 8-bit chunks for the SPI channel's limitations on word length
 
-        self.gpio_cs_pin.value = 0 # initiate transaction by pulling low
+        self.demux_controller.enable()  # Enable demux for this transaction
+        self.demux_controller.select_output(self.demux_output)
         self.spi_master.writebytes(bytesList)
-        self.gpio_cs_pin.value = 1
+        self.demux_controller.deselect_output()  # Disable after transaction
+        
+        # OLD DIRECT GPIO CS PIN VERSION:
+        # self.gpio_cs_pin.value = 0 # initiate transaction by pulling low
+        # self.spi_master.writebytes(bytesList)
+        # self.gpio_cs_pin.value = 1
     
     def close(self) -> None:
         self.write_mA(self.CURRENT_OUTPUT_RANGE_MIN)
