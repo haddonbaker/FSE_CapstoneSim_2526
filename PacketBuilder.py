@@ -1,3 +1,4 @@
+from PacketBuilder_utils import chType_from_logical_id
 # -*- coding: utf-8 -*-
 """
 Created on Sat Oct 19 12:49:44 2024
@@ -20,12 +21,12 @@ class dataEntry:
     '''
     allowed_chTypes = ["ao", "ai", "do", "di"]
     
-    def __init__(self, chType: str, gpio_str: str, val: Union[float, int], time: float = None):
-        # chType must be one of ["ao", "ai", "do", "di"]
-        # gpio_str is like "GPIO26" or one of the formats specified by https://gpiozero.readthedocs.io/en/stable/recipes.html#pin-numbering
-        # time : a Unix-style timestamp; when initiated by the master, this timestamp determines this command's position in the outgoing socket queue
-        self.chType = chType
-        self.gpio_str = gpio_str
+    def __init__(self, logical_id: str, val: Union[float, int], time: float = None):
+        # logical_id is like "SPI1_CARD1_SLOT1" or similar
+        self.logical_id = logical_id
+        # Calculate chType from logical_id
+        self.chType = chType_from_logical_id(logical_id)
+       
         self.val = val
         self.time = time
     

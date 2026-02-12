@@ -35,7 +35,7 @@ class T_CLICK_1:
     #     self.gpio_cs_pin = gpio_cs_pin
     #     self.spi_master = spi
     
-    def __init__(self, demux_controller : SN54LS138_Demux, demux_output : int, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
+    def __init__(self, demux_controller : SN54LS138_Demux, card_controller : SN54LS138_Demux, card_pos : int, demux_output : int, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
         ''' T_CLICK_1 board has an MCP4921 (12-bit DAC) that feeds an XTR116 loop driver (voltage-to-current converter).
         This class provides a single function, `write_mA`, that considers both chips' behaviors. 
         
@@ -52,6 +52,8 @@ class T_CLICK_1:
         self.demux_controller = demux_controller
         self.demux_output = demux_output
         self.spi_master = spi
+        self.card_controller = card_controller
+        self.card_pos = card_pos
 
         self.SHDNB = SHDNB
         self.GAB = GAB
@@ -92,8 +94,10 @@ class T_CLICK_1:
 
         self.demux_controller.enable()  # Enable demux for this transaction
         self.demux_controller.select_output(self.demux_output)
+        self.card_controller.select_output(self.card_pos)
         self.spi_master.writebytes(bytesList)
         self.demux_controller.deselect_output()  # Disable after transaction
+        self.card_controller.deselect_output()  # Disable after transaction
         
         # OLD DIRECT GPIO CS PIN VERSION:
         # self.gpio_cs_pin.value = 0 # initiate transaction by pulling low
