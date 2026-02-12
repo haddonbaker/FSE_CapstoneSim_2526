@@ -1,3 +1,5 @@
+# edited by Jacob Schroeder with the assistance of ChatGPT 2026-02-12
+# demux logic for chip selection added
 # interactively interface with a single Mikroe T-Click 1 using SN54LS138 demultiplexer for chip selection
 # Note: the MCP4921's SPI interface is three-wire (i.e. no MISO)
 # OLD VERSION: used an arbitrary CS pin (direct GPIO control)

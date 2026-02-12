@@ -1,4 +1,6 @@
 """
+Created on 2026-02-12 by Jacob Schroeder with the assistance of ChatGPT
+
 SN54LS138_Demux: Controls a SN54LS138 3-to-8 line demultiplexer/decoder for chip selection.
 
 The SN54LS138 is a high-speed 3-to-8 line decoder/demultiplexer with:
