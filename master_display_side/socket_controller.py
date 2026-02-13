@@ -30,8 +30,8 @@ class SocketController:
     def place_ramp(self, ch2send, start_mA: float, stop_mA: float, stepPerSecond_mA: float) -> bool:
         return self.ssm.place_ramp(ch2send=ch2send, start_mA=start_mA, stop_mA=stop_mA, stepPerSecond_mA=stepPerSecond_mA)
 
-    def clear_all_entries_with_gpio_str(self, gpio_str: str) -> int:
-        return self.ssm.clearAllEntriesWithGPIOStr(gpio_str)
+    def clear_all_entries_with_logical_id(self, logical_id: str) -> int:
+        return self.ssm.clearAllEntriesWithLogicalID(logical_id)
 
     def close(self):
         # terminate the ssm thread and clear queue

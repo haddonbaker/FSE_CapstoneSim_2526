@@ -96,14 +96,14 @@ class CommandQueue:
         reversedHeap = beforeRemoveAll[::-1]
         return [h for h in reversedHeap] # return only the object, not the timestamp
 
-    def pop_all_with_gpio_str(self, gpio_str:str) -> int:
-        # finds all heap entries having the given gpio_str, and deletes them from the heap
+    def pop_all_with_logical_id(self, logical_id:str) -> int:
+        # finds all heap entries having the given logical_id, and deletes them from the heap
         # returns the number popped
         if len(self.heap) == 0:
             return 0
         indicesToRemove = []
         for i in range(len(self.heap)):
-            if self.heap[i].gpio_str == gpio_str:
+            if self.heap[i].logical_id == logical_id:
                 indicesToRemove.append(i)
         # now iterate from larger indices to smaller indices, removing values
         for i in sorted(indicesToRemove, reverse=True):
@@ -127,9 +127,9 @@ class CommandQueue:
         return len(self.heap)
         
 if __name__ == "__main__":
-    d1 = dataEntry(chType = "ao", gpio_str = "GPIO26", val = 18.50, time = time.time()+5)
-    d2 = dataEntry(chType = "ai", gpio_str = "GPIO23", val = 0.00, time = time.time()+10)
-    d3 = dataEntry(chType = "di", gpio_str = "GPIO24", val = int(1), time = time.time()-10)
+    d1 = dataEntry(logical_id = "SPI2_CARD1_SLOT1", val = 18.50, time = time.time()+5)
+    d2 = dataEntry(logical_id = "SPI1_CARD1_SLOT1", val = 0.00, time = time.time()+10)
+    d3 = dataEntry(logical_id = "SPI1_CARD1_SLOT2", val = int(1), time = time.time()-10)
     
     q = CommandQueue()
     q.put_all([d1, d2, d3])

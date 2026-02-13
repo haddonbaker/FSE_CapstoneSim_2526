@@ -138,7 +138,8 @@ class SimulatorApp:
         self.help_btn = ctk.CTkButton(
             self.top_bar,
             image=self.info_icon if self.info_icon else None,
-            text="ⓘ" if not self.info_icon else "",
+            text="ⓘ Signal Masterkey" if not self.info_icon else "Signal Masterkey",
+            font=("Consolas", 12),
             width=30,
             height=30,
             corner_radius=15,
@@ -149,7 +150,7 @@ class SimulatorApp:
         self.help_btn.pack(side="left", padx=5)
         
         # Add hover text tooltip
-        self._create_tooltip(self.help_btn, "See signal masterkey")
+        self._create_tooltip(self.help_btn, "view signal masterkey")
 
         # Error button
         error_icon_path = self.current_dir / "icons" / "circle-alert.png"
@@ -165,7 +166,8 @@ class SimulatorApp:
         self.error_btn = ctk.CTkButton(
             self.top_bar,
             image=self.error_icon if self.error_icon else None,
-            text="⚠" if not self.error_icon else "",
+            text="⚠ Error Log" if not self.error_icon else "Error Log",
+            font=("Consolas", 12),
             width=30,
             height=30,
             corner_radius=15,
@@ -174,7 +176,7 @@ class SimulatorApp:
             command=self.open_error_log_popup
         )
         self.error_btn.pack(side="left", padx=5)
-        self._create_tooltip(self.error_btn, "View error log")
+        self._create_tooltip(self.error_btn, "view error log")
     
     def _create_tooltip(self, widget, text):
         """Create a simple tooltip for a widget with proper cleanup."""
@@ -1011,9 +1013,9 @@ class SimulatorApp:
 
     def cancel_ramp_callback(self, sigName: str):
         ch = self.channel_mgr.get_channel_entry(sigName)
-        if ch.getGPIOStr() is None:
+        if ch.get_logical_id() is None:
             return
-        numRemoved = self.socket_ctrl.clear_all_entries_with_gpio_str(ch.getGPIOStr())
+        numRemoved = self.socket_ctrl.clear_all_entries_with_logical_id(ch.get_logical_id())
         if self.enable_verbose_logging:
             print(f"cancelled {numRemoved} entries for {sigName}")
 
@@ -1112,9 +1114,20 @@ class SimulatorApp:
         # Build error log page inside popup
         error_log_page = ErrorLog(
             self.error_log_popup,
-            self.error_stack
+            self.error_stack,
+            on_update=self._on_error_log_update
         )
         error_log_page.pack(fill="both", expand=True, padx=10, pady=10)
+
+    def _on_error_log_update(self):
+        """Callback when error log changes."""
+        if len(self.error_stack) >= self.error_stack_max_len:
+            self.error_frame_label.configure(text=f"Errors ({len(self.error_stack)}+)")
+        else:
+            self.error_frame_label.configure(text=f"Errors ({len(self.error_stack)})")
+            
+        if len(self.error_stack) == 0:
+            self.show_error("")
 
     def show_connection_status(self, online: bool | None, message: str = ""):
         if online is None:
@@ -1139,8 +1152,8 @@ class SimulatorApp:
                 # analog channel errors usually prefix 'a' and include gpio_str in description after ':'
                 if sockResp.source.lower()[0] == "a":
                     try:
-                        gpio_str = sockResp.description.split(":")[1].strip()
-                        chEntry_to_blame = self.channel_mgr.get_channel_from_gpio(gpio_str)
+                        logical_id = sockResp.description.split(":")[1].strip()
+                        chEntry_to_blame = self.channel_mgr.get_channel_from_logical_id(logical_id)
                         if "Encountered unexpected exception" in sockResp.description:
                             self.show_error(message=f"Encountered unexpected exception for {chEntry_to_blame.name} at board slot {chEntry_to_blame.boardSlotPosition}")
                         if "SPI communication error detected" in sockResp.description:
@@ -1155,9 +1168,9 @@ class SimulatorApp:
                     self.show_error(message=sockResp.description)
             elif isinstance(sockResp, dataEntry):
                 self.show_connection_status(online=True)
-                chEntry = self.channel_mgr.get_channel_from_gpio(sockResp.gpio_str)
+                chEntry = self.channel_mgr.get_channel_from_logical_id(sockResp.logical_id)
                 if chEntry is None:
-                    if sockResp.gpio_str == "ack":
+                    if sockResp.logical_id == "ack":
                         print("received ack packet")
                     continue
                 if chEntry.sig_type.lower() == "ai":
@@ -1189,7 +1202,7 @@ class SimulatorApp:
         # schedule periodic reads for ai and di channels
         for name, meter in self.ai_meter_objects.items():
             ch = self.channel_mgr.get_channel_entry(name)
-            if ch.getGPIOStr() is None:
+            if ch.get_logical_id() is None:
                 continue
             self.socket_ctrl.place_single_mA(ch2send=ch, mA_val=self.ai_LPF_boxcar_length, time=time.time())
 

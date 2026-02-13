@@ -8,10 +8,11 @@ from datetime import datetime
 class ErrorLog(ctk.CTkFrame):
     """Displays error log with timestamps and ability to clear individual errors."""
     
-    def __init__(self, parent, error_stack):
+    def __init__(self, parent, error_stack, on_update=None):
         super().__init__(parent)
 
         self.error_stack = error_stack  # Reference to the deque
+        self.on_update = on_update
         self.error_widgets = {}  # Track error widgets by index
 
         # Create top bar with title and refresh button
@@ -34,6 +35,17 @@ class ErrorLog(ctk.CTkFrame):
         )
         self.refresh_btn.pack(side="right", padx=5)
 
+        self.clear_all_btn = ctk.CTkButton(
+            self.top_bar,
+            text="Clear All",
+            width=80,
+            height=30,
+            fg_color="darkred",
+            hover_color="red",
+            command=self._clear_all_errors
+        )
+        self.clear_all_btn.pack(side="right", padx=5)
+
         # Create scrollable frame
         self.scrollable_frame = ctk.CTkScrollableFrame(self, corner_radius=10)
         self.scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -42,6 +54,13 @@ class ErrorLog(ctk.CTkFrame):
 
         # Initial build
         self._rebuild_error_list()
+
+    def _clear_all_errors(self):
+        """Clear all errors from the stack."""
+        self.error_stack.clear()
+        self._rebuild_error_list()
+        if self.on_update:
+            self.on_update()
 
     def _rebuild_error_list(self):
         """Rebuild the entire error list."""
@@ -116,3 +135,5 @@ class ErrorLog(ctk.CTkFrame):
         
         # Rebuild the list
         self._rebuild_error_list()
+        if self.on_update:
+            self.on_update()

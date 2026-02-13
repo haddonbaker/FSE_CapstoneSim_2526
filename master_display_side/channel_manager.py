@@ -25,5 +25,5 @@ class ChannelManager:
         # wrapper for existing method naming
         return self._channels.getChannelEntry(sigName)
 
-    def get_channel_from_gpio(self, gpio_str: str):
-        return self._channels.get_channelEntry_from_GPIOstr(gpio_str)
+    def get_channel_from_logical_id(self, logical_id: str):
+        return self._channels.get_channelEntry_from_logical_id(logical_id)

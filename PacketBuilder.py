@@ -16,7 +16,7 @@ import time
 class dataEntry:
     '''
     dataEntry represents a single timestamped datum used for both analog and digital signals
-    e.g. "chType": "ai", gpio_str : "GPIO26", "val": 3.14, "time": 1735346511.9356625
+    e.g. "chType": "ai", logical_id : "SPI1_CARD1_SLOT1", "val": 3.14, "time": 1735346511.9356625
     n.b. pass an integer as "val" if you want to send a binary digital signal (for digital inputs/outputs)
     '''
     allowed_chTypes = ["ao", "ai", "do", "di"]
@@ -40,13 +40,13 @@ class dataEntry:
         '''
         
         # see https://gist.github.com/stavshamir/0f5bc3e663b7bb33dd2d7822dfcc0a2b#file-book-py
-        return cls(in_dict["chType"], in_dict["gpio_str"], in_dict["val"], in_dict["time"])
+        return cls(in_dict["logical_id"], in_dict["val"], in_dict["time"])
     
     def as_dict(self):
         time_to_send = self.time
         if self.time is None:
             time_to_send = time.time()
-        return {"chType": self.chType, "gpio_str": self.gpio_str, "val": self.val, "time": time_to_send}
+        return {"logical_id": self.logical_id, "val": self.val, "time": time_to_send}
     
     @property
     def chType(self):
@@ -59,14 +59,14 @@ class dataEntry:
         self._chType = o_chType
         
     @property
-    def gpio_str(self):
-        return self._gpio_str
+    def logical_id(self):
+        return self._logical_id
     
-    @gpio_str.setter
-    def gpio_str(self, o_gpio_str):
-        if not isinstance(o_gpio_str, str):
-            raise TypeError(f"Expected a string as `gpio_str`, but received an object of type {type(o_gpio_str)}")
-        self._gpio_str = o_gpio_str
+    @logical_id.setter
+    def logical_id(self, o_logical_id):
+        if not isinstance(o_logical_id, str):
+            raise TypeError(f"Expected a string as `logical_id`, but received an object of type {type(o_logical_id)}")
+        self._logical_id = o_logical_id
     
     @property
     def val(self):
@@ -325,9 +325,9 @@ class DataPacketModel:
         
         
 if __name__ == "__main__":
-    de = [dataEntry(chType = "ao", gpio_str="GPIO26", val=3.14, time=time.time())]
+    de = [dataEntry(logical_id = "SPI2_CARD1_SLOT1", val = 3.14, time=time.time())]
 
-    ee = [errorEntry(source="GPIO26", criticalityLevel="medium", description="something went wrong...", time=time.time())]
+    ee = [errorEntry(source="SPI2_CARD1_SLOT1", criticalityLevel="medium", description="something went wrong...", time=time.time())]
     sd = DataPacketModel(dataEntries=de, msg_type="d", error_entries=ee, time=time.time())    
 
     print(sd.get_packet_as_string())

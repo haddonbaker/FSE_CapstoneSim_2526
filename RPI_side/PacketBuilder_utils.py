@@ -12,7 +12,7 @@ def chType_from_logical_id(logical_id: str) -> str:
     match = re.match(r"SPI\d+_CARD(\d+)_SLOT(\d+)", logical_id)
     if not match:
         return None
-    card_num = int(match.group(1))
+    card_num = int(match.group(1)) - 1
     slot_num = int(match.group(2))
     absolute_slot = card_num * 8 + slot_num
     if 0 <= absolute_slot <= 31:
@@ -28,7 +28,7 @@ def chType_from_logical_id(logical_id: str) -> str:
 
 def slot_from_logical_id(logical_id: str) -> int:
     """
-    Determines slot (ai, ao, di, do) from logical_id string.
+    Determines slot number from logical_id string.
     """
     if logical_id is None:
         return None
@@ -47,7 +47,7 @@ def spi_from_logical_id(logical_id: str) -> int:
     """
     if logical_id is None:
         return None
-    # Infer slot number from logical_id
+    # Infer SPI number from logical_id
     import re
     match = re.match(r"SPI(\d+)_CARD(\d+)_SLOT(\d+)", logical_id)
     if not match:
@@ -59,7 +59,8 @@ def spi_from_logical_id(logical_id: str) -> int:
 def card_pos_from_logical_id(logical_id: str) -> int:
     """
     Returns the absolute card position (card_num) from a logical_id string of the form SPIx_CARDx_SLOTx.
-    Example: SPI1_CARD3_SLOT2 -> returns 3
+    Returns a 0-based index (e.g. CARD1 -> 0).
+    Example: SPI1_CARD3_SLOT2 -> returns 2
     """
     if logical_id is None:
         return None
@@ -67,5 +68,5 @@ def card_pos_from_logical_id(logical_id: str) -> int:
     match = re.match(r"SPI\d+_CARD(\d+)_SLOT(\d+)", logical_id)
     if not match:
         return None
-    card_num = int(match.group(2))
+    card_num = int(match.group(1)) - 1
     return card_num

@@ -33,7 +33,7 @@ class Channel_Entry:
         self.realUnitsHighAmount = realUnitsHighAmount
         self.showOnGUI = showOnGUI
 
-        self.gpio = self._compute_logical_id()
+        self.logical_id = self._compute_logical_id()
     
         # constants for linear calibration model are only available for input signals, especially analog ones
         # calibration function transforms raw reading (from RPi) into corrected reading to be displayed on GUI
@@ -48,7 +48,7 @@ class Channel_Entry:
         Computes the logical ID string (e.g., 'SPI1_CARD1_SLOT1') based on signal type and board slot.
         Inputs (AI, DI) -> SPI 1
         Outputs (AO, DO) -> SPI 2
-        Card and Slot are derived from boardSlotPosition (Card * 10 + Slot).
+        Card and Slot are derived from boardSlotPosition (Card * 8 + Slot).
         """
         if self.boardSlotPosition is None:
             return None
@@ -61,8 +61,8 @@ class Channel_Entry:
             spi_bus = 2
 
         # Determine Card and Slot
-        card_num = self.boardSlotPosition // 10
-        card_slot = self.boardSlotPosition % 10
+        card_num = (self.boardSlotPosition // 8) + 1
+        card_slot = self.boardSlotPosition % 8
         
         return f"SPI{spi_bus}_CARD{card_num}_SLOT{card_slot}"
         
@@ -113,11 +113,11 @@ class Channel_Entry:
         return f"{self.mA_to_EngineeringUnits(mA_val)} {self.units}"
     
     
-    def getGPIOStr(self):
-        return self.gpio
+    def get_logical_id(self):
+        return self.logical_id
     
     def __str__(self):
-        return f"Channel_Entry object: {self.name} at board slot position {self.boardSlotPosition} with GPIO {self.gpio}"
+        return f"Channel_Entry object: {self.name} at board slot position {self.boardSlotPosition} with Logical ID {self.logical_id}"
 
 class Channel_Entries:
     def __init__(self):        
@@ -127,18 +127,18 @@ class Channel_Entries:
     def add_ChannelEntry(self, chEntry: Channel_Entry):
         self.channels[chEntry.name] = chEntry
 
-    def getGPIOstr_from_signal_name(self, sigName: str) -> str | None:
+    def get_logical_id_from_signal_name(self, sigName: str) -> str | None:
         # sigName is like "AOP 1", "IVT 3", etc.
         # will return None if that signal name doesn't exist
         ch = self.channels.get(sigName)
         if ch is None:
             return None
-        return ch.getGPIOStr()
+        return ch.get_logical_id()
 
-    def get_channelEntry_from_GPIOstr(self, gpio_str:str):
+    def get_channelEntry_from_logical_id(self, logical_id:str):
         # used by the gui to retrieve the name of the signal
         for k,v in self.channels.items():
-            if v.gpio == gpio_str:
+            if v.logical_id == logical_id:
                 return v
         return None
     

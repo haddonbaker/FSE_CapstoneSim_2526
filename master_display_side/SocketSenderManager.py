@@ -77,7 +77,7 @@ class SocketSenderManager:
             if not respStatus:
                 self.qForGUI.put(errorEntry(source="Ethernet Socket", criticalityLevel="high", description=f"Could not receive ping response from {self.host}", time=time.time()))
             else:
-                self.qForGUI.put(dataEntry(chType="ao", gpio_str="status:SocketSenderManager is online", val=1, time=time.time()))
+                self.qForGUI.put(dataEntry(logical_id="status:SocketSenderManager is online", val=1, time=time.time()))
                 # send a status message to gui. We'll repurpose the errorEntry class with criticality None
                 self.qForGUI.put(errorEntry(source="Ethernet Connection", criticalityLevel=None, description=f"Host {self.host} responded to a ping.", time=time.time()))
                 self.logger.info(f"testSocketOnInit received ping response. Ping delay was {int((end - start)*1000)} ms.")     
@@ -108,7 +108,7 @@ class SocketSenderManager:
         if debug_statements == 1:
             print(f"DEBUG [place_ramp]: Signal={ch2send.name}, Type={ch2send.sig_type}")
             print(f"    Start={start_mA}mA, Stop={stop_mA}mA, Rate={stepPerSecond_mA}mA/s")
-            print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+            print(f"    LogicalID={ch2send.get_logical_id()}, Slot={ch2send.boardSlotPosition}")
 
         if stepPerSecond_mA == 0:
             if self.log: self.logger.warning("place_ramp: zero requested as a step value")
@@ -151,18 +151,18 @@ class SocketSenderManager:
             if ch2send.sig_type.lower() == "di":
                 print(f"DEBUG [place_single_EngineeringUnits]: Signal={ch2send.name}, Type={ch2send.sig_type}")
                 print(f"    Action=POLL (Value={val_in_eng_units} ignored by RPi)")
-                print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+                print(f"    LogicalID={ch2send.get_logical_id()}, Slot={ch2send.boardSlotPosition}")
             else:
                 print(f"DEBUG [place_single_EngineeringUnits]: Signal={ch2send.name}, Type={ch2send.sig_type}")
                 print(f"    Value={val_in_eng_units} {ch2send.units}")
-                print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+                print(f"    LogicalID={ch2send.get_logical_id()}, Slot={ch2send.boardSlotPosition}")
 
         if ch2send.sig_type.lower() == "ao" and not ch2send.isValidEngineeringUnits(val_in_eng_units):
             return (False, f"Value requested ({val_in_eng_units} {ch2send.units}) for {ch2send.name} must be between {ch2send.realUnitsLowAmount} and {ch2send.realUnitsHighAmount} {ch2send.units}.")
-        if ch2send.getGPIOStr() is None:
+        if ch2send.get_logical_id() is None:
             return (False, f"The boardSlotPosition ({ch2send.boardSlotPosition}) for {ch2send.name} is invalid.")
     
-        de = dataEntry(chType=ch2send.sig_type, gpio_str=ch2send.getGPIOStr(), val=ch2send.convert_to_packetUnits(val_in_eng_units), time=time)
+        de = dataEntry(logical_id=ch2send.get_logical_id(), val=ch2send.convert_to_packetUnits(val_in_eng_units), time=time)
         with self.mutex:
             self.theCommandQueue.put(de)
         if self.log: self.logger.info(f"place_single_EngineeringUnits: {de}")
@@ -175,14 +175,14 @@ class SocketSenderManager:
         if debug_statements == 1 and ch2send.sig_type.lower() != "ai":
             print(f"DEBUG [place_single_mA]: Signal={ch2send.name}, Type={ch2send.sig_type}")
             print(f"    Value={mA_val} mA")
-            print(f"    GPIO={ch2send.getGPIOStr()}, Slot={ch2send.boardSlotPosition}")
+            print(f"    LogicalID={ch2send.get_logical_id()}, Slot={ch2send.boardSlotPosition}")
 
         if not ch2send.isValidmA(mA_val):
             return (False, f"mA value requested ({mA_val} mA) for {ch2send.name} must be between 4.0 and 20.0 mA.")
-        if ch2send.getGPIOStr() is None:
-            return (False, f"GPIO for {ch2send.name} is undefined. Check channel_definitions.py")
+        if ch2send.get_logical_id() is None:
+            return (False, f"Logical ID for {ch2send.name} is undefined. Check channel_definitions.py")
         
-        de = dataEntry(chType=ch2send.sig_type, gpio_str=ch2send.getGPIOStr(), val=mA_val, time=time)
+        de = dataEntry(logical_id=ch2send.get_logical_id(), val=mA_val, time=time)
         with self.mutex:
             self.theCommandQueue.put(de)
         if self.log: self.logger.info(f"place_single_mA: {de}")
@@ -191,7 +191,7 @@ class SocketSenderManager:
     def _loopCommandQueue(self) -> None:
         '''A continuous loop that should be run in a background thread. Checks to see if any data entries are (over)due
         to be sent over the socket. If so, initiates a single-use socket connection with `self.host`, sends those entries, awaits a response,
-        and places response(s) on `self.qForGUI`. Note that even ACK responses (generated by output commands and identified by "ack" as their `gpio_str`) will be placed on the queue, so the GUI must filter the queue 
+        and places response(s) on `self.qForGUI`. Note that even ACK responses (generated by output commands and identified by "ack" as their `logical_id`) will be placed on the queue, so the GUI must filter the queue 
         to select meaningful responses to display'''
         
         if self.log: self.logger.info("_loopCommandQueue thread has started successfully")
@@ -229,7 +229,7 @@ class SocketSenderManager:
                 if self.log: self.logger.critical(f"_loopCommandQueue Could not establish a socket connection with host within timeout={self.socketTimeout} seconds. Debug str is {e}")
                 # re-place requests that failed to send back on the queue, unless they're auto-poll requests
                 for el in outgoings:
-                    if isinstance(el, dataEntry) and el.chType.lower()[1]=="o":
+                    if isinstance(el, dataEntry) and "SPI2" in el.logical_id:
                         # then it's probably a user-requested output signal. Re-place the element
                         # back on the queue to be treated when the socket comes online again
                         # this behavior is needed to reactivate the do toggle switch on the UI
@@ -289,9 +289,9 @@ class SocketSenderManager:
         while not self.qForGUI.empty():
             self.qForGUI.get()
     
-    def clearAllEntriesWithGPIOStr(self, gpio_str:str) -> int:
+    def clearAllEntriesWithLogicalID(self, logical_id:str) -> int:
         # returns number of entries removed
-        return self.theCommandQueue.pop_all_with_gpio_str(gpio_str=gpio_str)
+        return self.theCommandQueue.pop_all_with_logical_id(logical_id=logical_id)
         
     def clearCommandQueue(self):
         self.theCommandQueue.clear_all()

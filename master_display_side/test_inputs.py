@@ -25,8 +25,8 @@ def input_simulator(resp_queue, channel_mgr, stop_event):
         
         # Iterate through all channels to generate fake data
         for name, ch in channel_mgr.channels.items():
-            gpio = ch.getGPIOStr()
-            if not gpio:
+            logical_id = ch.get_logical_id()
+            if not logical_id:
                 continue
 
             if ch.sig_type.lower() == "ai":
@@ -42,8 +42,7 @@ def input_simulator(resp_queue, channel_mgr, stop_event):
                 
                 # Create data entry (GUI expects mA for AI)
                 entry = dataEntry(
-                    chType="ai",
-                    gpio_str=gpio,
+                    logical_id=logical_id,
                     val=val_mA,
                     time=current_time
                 )
@@ -58,8 +57,7 @@ def input_simulator(resp_queue, channel_mgr, stop_event):
                 val = 1 if is_on else 0
                 
                 entry = dataEntry(
-                    chType="di",
-                    gpio_str=gpio,
+                    logical_id=logical_id,
                     val=val,
                     time=current_time
                 )
