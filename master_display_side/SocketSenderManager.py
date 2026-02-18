@@ -177,10 +177,14 @@ class SocketSenderManager:
             print(f"    Value={mA_val} mA")
             print(f"    LogicalID={ch2send.get_logical_id()}, Slot={ch2send.boardSlotPosition}")
 
-        if not ch2send.isValidmA(mA_val):
-            return (False, f"mA value requested ({mA_val} mA) for {ch2send.name} must be between 4.0 and 20.0 mA.")
+        if ch2send.sig_type.lower() != "ai" and not ch2send.isValidmA(mA_val):
+            msg = f"mA value requested ({mA_val} mA) for {ch2send.name} must be between 4.0 and 20.0 mA."
+            if self.log: self.logger.warning(msg)
+            return (False, msg)
         if ch2send.get_logical_id() is None:
-            return (False, f"Logical ID for {ch2send.name} is undefined. Check channel_definitions.py")
+            msg = f"Logical ID for {ch2send.name} is undefined. Check channel_definitions.py"
+            if self.log: self.logger.warning(msg)
+            return (False, msg)
         
         de = dataEntry(logical_id=ch2send.get_logical_id(), val=mA_val, time=time)
         with self.mutex:

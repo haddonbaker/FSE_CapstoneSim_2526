@@ -1145,11 +1145,12 @@ class SimulatorApp:
         # read all responses in the queue
         while not self.socketRespQueue.empty():
             sockResp = self.socketRespQueue.get()
+            
             if self.enable_verbose_logging:
                 print(f"sockResp is {sockResp}")
-
             if isinstance(sockResp, errorEntry):
                 # analog channel errors usually prefix 'a' and include gpio_str in description after ':'
+                
                 if sockResp.source.lower()[0] == "a":
                     try:
                         logical_id = sockResp.description.split(":")[1].strip()
@@ -1204,7 +1205,9 @@ class SimulatorApp:
             ch = self.channel_mgr.get_channel_entry(name)
             if ch.get_logical_id() is None:
                 continue
-            self.socket_ctrl.place_single_mA(ch2send=ch, mA_val=self.ai_LPF_boxcar_length, time=time.time())
+            success, err = self.socket_ctrl.place_single_mA(ch2send=ch, mA_val=self.ai_LPF_boxcar_length, time=time.time())
+            if not success and self.enable_verbose_logging:
+                print(f"Polling error for {name}: {err}")
 
         for name, label_obj in self.di_label_objects.items():
             try:

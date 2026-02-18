@@ -14,7 +14,7 @@ from ui_app import SimulatorApp
 if __name__ == "__main__":
     # determine paths
     current_dir = Path(__file__).resolve().parent
-    config_path = current_dir / "default_config.json"
+    config_path = current_dir / "t_config.json"
 
     # initialize channel manager and load config
     channel_mgr = ChannelManager() 

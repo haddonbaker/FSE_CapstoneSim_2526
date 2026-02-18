@@ -12,7 +12,7 @@ from typing import Union
 from statistics import stdev
 
 import sys
-sys.path.insert(0, "/home/fsepi51/Documents/FSE_Capstone_sim") # allow this file to find other project modules
+sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
 
 class R_CLICK:
     
