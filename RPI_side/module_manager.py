@@ -14,20 +14,52 @@ from module_drivers.Digital_Input_Module import Digital_Input_Module
 from module_drivers.R_Click import R_CLICK
 from module_drivers.Relay_Channel import RELAY_CHANNEL
 from module_drivers.Indicator_Light import INDICATOR_LIGHT
+from module_drivers.SN54LS138_Demux import SN54LS138_Demux
+# OLD VERSION: did not use demux
+# from module_drivers.T_Click_1 import T_CLICK_1
+# from module_drivers.Digital_Input_Module import Digital_Input_Module
+# from module_drivers.R_Click import R_CLICK
+# from module_drivers.Relay_Channel import RELAY_CHANNEL
+# from module_drivers.Indicator_Light import INDICATOR_LIGHT
 
 class Module_Manager:
     # maintain a list of modules (e.g. R_CLICK, COMPARATOR_CLICK)
     #  initiated by the master, over the socket 
     # has an instance of GPIO_manager to allocate GPIOs to serve as 
-    #  chip selects and digital inputs for the modules
+    #  digital inputs and outputs for the modules
+    # uses SN54LS138_Demux for SPI module chip selection
 
     # also responsible for creating a module if not exist yet
     # or to write a value to a module at the specified gpio pin
+    
+    # Module to demux output mapping for SPI modules
+    DEMUX_OUTPUT_MAP = {
+        "GPIO26": 0,  # ao - T_CLICK_1
+        "GPIO13": 1,  # ai - R_CLICK
+        "GPIO20": 2,  # do - RELAY_CHANNEL
+        "GPIO21": 3,  # di - Digital_Input_Module
+        # Add more mappings as needed (up to 8 modules for 3:8 demux)
+    }
 
     def __init__(self, spi : spidev.SpiDev):
         self.spi = spi
         self.module_dict = dict() # a dict like {"GPIO26" : ["ao", driver_obj]}
         self.gpio_manager = GPIO_Manager() # initialize to empty at first
+        # Initialize SN54LS138 demux with address lines on GPIO22 (A), GPIO23 (B), GPIO24 (C)
+        # Enable lines on GPIO25 (G1), GPIO26 (G2A), GPIO27 (G2B)
+        self.demux_controller = SN54LS138_Demux(
+            a_pin="GPIO2", 
+            b_pin="GPIO3", 
+            c_pin="GPIO4",
+            g1_pin="GPIO7",
+        )
+        # Demux starts disabled; will be enabled only when needed for SPI transactions
+        
+        # OLD DIRECT GPIO CS PIN VERSION:
+        # def __init__(self, spi : spidev.SpiDev):
+        #     self.spi = spi
+        #     self.module_dict = dict() # a dict like {"GPIO26" : ["ao", driver_obj]}
+        #     self.gpio_manager = GPIO_Manager() # initialize to empty at first
     
     def execute_command(self, gpio_str: str, chType: str, val: float | int) -> Tuple[dataEntry, list[errorEntry]]:
         '''
@@ -103,17 +135,27 @@ class Module_Manager:
 
     def make_module_entry(self, gpio_str: str, chType: str):
         # add an entry to the dictionary because it doesn't exist yet.
-        # Also need to request the gpio_manager to add a GPIO object to itself
+        # Also need to request the gpio_manager to add a GPIO object to itself (for non-SPI modules)
         self.gpio_manager.put_gpio(gpio_str, chType = chType)
         print(f"[module_manager.make_module_entry] after put_gpio, list is {self.gpio_manager.gpio_dict}")
 
         # now create a driver object for the module of the correct type
         if chType.lower() == "ai":
-            driverObj = R_CLICK(gpio_cs_pin = self.gpio_manager.get_gpio(gpio_str),
+            demux_output = self.DEMUX_OUTPUT_MAP.get(gpio_str, 0)  # default to output 0 if not mapped
+            driverObj = R_CLICK(demux_controller = self.demux_controller,
+                                demux_output = demux_output,
                                 spi = self.spi)
+            # OLD DIRECT GPIO CS PIN VERSION:
+            # driverObj = R_CLICK(gpio_cs_pin = self.gpio_manager.get_gpio(gpio_str),
+            #                     spi = self.spi)
         elif chType.lower() == "ao":
-            driverObj = T_CLICK_1(gpio_cs_pin = self.gpio_manager.get_gpio(gpio_str),
+            demux_output = self.DEMUX_OUTPUT_MAP.get(gpio_str, 0)  # default to output 0 if not mapped
+            driverObj = T_CLICK_1(demux_controller = self.demux_controller,
+                                    demux_output = demux_output,
                                     spi = self.spi)
+            # OLD DIRECT GPIO CS PIN VERSION:
+            # driverObj = T_CLICK_1(gpio_cs_pin = self.gpio_manager.get_gpio(gpio_str),
+            #                         spi = self.spi)
         
         elif chType.lower() == "di":
             driverObj = Digital_Input_Module(gpio_in_pin = self.gpio_manager.get_gpio(gpio_str))
@@ -134,5 +176,14 @@ class Module_Manager:
             driver_obj.close()
 
         self.gpio_manager.release_all_gpios()
+        self.demux_controller.disable()  # Disable demux
+        self.demux_controller.close()
         self.module_dict.clear()
+        
+        # OLD DIRECT GPIO CS PIN VERSION:
+        # def release_all_modules(self):
+        #     for chType, driver_obj in self.module_dict.values():
+        #         driver_obj.close()
+        #     self.gpio_manager.release_all_gpios()
+        #     self.module_dict.clear()
 
