@@ -20,6 +20,11 @@ Truth table for address lines:
 - 1 1 1 → Y7 (LOW)
 """
 
+import sys
+sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+
+
+
 import gpiozero
 from typing import Union
 
@@ -58,8 +63,8 @@ class SN54LS138_Demux:
             self.c = c_pin
 
         # Enable pin (optional, default to GPIO7)
-        if g1_pin is None:
-            self.g1 = gpiozero.DigitalOutputDevice("GPIO27", initial_value=1)  # G1 active HIGH
+        if g1_pin is None: 
+            self.g1 = None
         elif isinstance(g1_pin, str):
             self.g1 = gpiozero.DigitalOutputDevice(g1_pin, initial_value=1)
         else:
@@ -95,16 +100,19 @@ class SN54LS138_Demux:
         """
         # Disable the demux by pulling G1 LOW
         # This drives all outputs HIGH, effectively deselecting
-        self.g1.value = 0  # Disable G1 (active HIGH)
+        if self.g1 != None:
+            self.g1.value = 0  # Disable G1 (active HIGH)
         self.current_output = None
 
     def enable(self) -> None:
         """Enable the demultiplexer (activate outputs)."""
-        self.g1.value = 1  # G1 is active HIGH (G2A and G2B are grounded)
+        if self.g1 != None:
+            self.g1.value = 1  # G1 is active HIGH (G2A and G2B are grounded)
 
     def disable(self) -> None:
         """Disable the demultiplexer (all outputs HIGH/inactive)."""
-        self.g1.value = 0  # Disable G1
+        if self.g1 != None:
+            self.g1.value = 0  # Disable G1
 
     def close(self) -> None:
         """Clean up GPIO resources."""
@@ -115,7 +123,8 @@ class SN54LS138_Demux:
         if hasattr(self, 'c'):
             self.c.close()
         if hasattr(self, 'g1'):
-            self.g1.close()
+            if self.g1 != None:
+                self.g1.close()
 
     def __str__(self) -> str:
         return f"SN54LS138_Demux (currently selecting output {self.current_output})"
