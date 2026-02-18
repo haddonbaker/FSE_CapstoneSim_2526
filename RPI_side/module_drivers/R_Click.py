@@ -1,8 +1,12 @@
-# -*- coding: utf-8 -*-
+
 """
 Created on Wed Nov 13 13:26:36 2024
-
-@author: REYNOLDSPG21
+# edited by Jacob Schroeder with the assistance of ChatGPT 2026-2-17
+# demux logic for chip selection added
+# interactively interface with a single Mikroe R-Click using SN54LS138 demultiplexer for chip selection
+# Note: the MCP4921's SPI interface is three-wire (i.e. no MISO)
+# OLD VERSION: used an arbitrary CS pin (direct GPIO control)
+@author: REYNOLDSPG21 
 """
 
 import spidev
@@ -14,16 +18,26 @@ from statistics import stdev
 import sys
 sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
 
+from .SN54LS138_Demux import SN54LS138_Demux
+
 class R_CLICK:
     
     V_REF = 2.048 # voltage reference for the ADC chip
     R_SHUNT = 4.99 # ohms.  shunt resistor through which the signal current flows.
     BIT_RES = 12 # of ADC
     
-    def __init__(self, gpio_cs_pin : Union[gpiozero.DigitalInputDevice, gpiozero.DigitalOutputDevice], spi : spidev.SpiDev):
+    # OLD DIRECT GPIO CS PIN VERSION:
+    # def __init__(self, gpio_cs_pin : Union[gpiozero.DigitalInputDevice, gpiozero.DigitalOutputDevice], spi : spidev.SpiDev):
+    #     self.spi = spi
+    #     self.gpio_cs_pin = gpio_cs_pin
+    
+    def __init__(self, demux_controller : SN54LS138_Demux, card_controller : SN54LS138_Demux, card_pos : int, demux_output : int, spi: spidev.SpiDev,):
         self.spi = spi
-        self.gpio_cs_pin = gpio_cs_pin
-        
+        self.demux_controller = demux_controller
+        self.demux_output = demux_output
+        self.card_controller = card_controller
+        self.card_pos = card_pos
+
     def _twoBytes_to_counts(self, byteList: list[int]) -> int:
         ''' combines the two 8-bit words into a single 12-bit word that contains actual ADC count'''
         if len(byteList) != 2: # byteList should be a list containing two 8-bit integers
@@ -40,10 +54,19 @@ class R_CLICK:
         return self._counts_to_mA(self._twoBytes_to_counts(byteList))
     
     def read_mA(self) -> float:
-        self.gpio_cs_pin.value = 0 # initiate transaction by pulling cs pin low
+        self.demux_controller.enable()  # Enable demux for this transaction
+        self.demux_controller.select_output(self.demux_output)
+        self.card_controller.select_output(self.card_pos)
         # time.sleep(1)
         rawResponse = self.spi.readbytes(2)
-        self.gpio_cs_pin.value = 1 # end transaction by pulling cs pin high
+        self.demux_controller.deselect_output()  # Disable after transaction
+        self.card_controller.deselect_output()  # Disable after transaction
+        
+        # OLD DIRECT GPIO CS PIN VERSION:
+        # self.gpio_cs_pin.value = 0 # initiate transaction by pulling cs pin low
+        # time.sleep(1)
+        # rawResponse = self.spi.readbytes(2)
+        # self.gpio_cs_pin.value = 1 # end transaction by pulling cs pin high
         
         return self._twoBytes_to_mA(rawResponse)
     
@@ -51,7 +74,9 @@ class R_CLICK:
         pass
     
     def __str__(self) -> str:
-        return f"R Click assigned to gpio pin: {self.gpio_cs_pin}"
+        return f"R Click assigned to demux output: {self.demux_output}"
+        # OLD DIRECT GPIO CS PIN VERSION:
+        # return f"R Click assigned to gpio pin: {self.gpio_cs_pin}"
     
     
     

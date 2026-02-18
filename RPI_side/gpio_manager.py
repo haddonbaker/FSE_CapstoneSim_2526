@@ -1,3 +1,9 @@
+
+import sys
+sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+
+
+
 import gpiozero
 from typing import Union
 

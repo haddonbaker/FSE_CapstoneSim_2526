@@ -17,8 +17,13 @@ from datetime import datetime
 import spidev
 import os
 
+
+from gpiozero import Device
+from gpiozero.pins.lgpio import LGPIOFactory
+Device.pin_factory = LGPIOFactory()
+
 import sys
-sys.path.insert(0, "/home/fsepi51/Documents/FSE_Capstone_sim") # allow this file to find other project modules
+sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
 
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
 from module_manager import Module_Manager
@@ -39,7 +44,7 @@ spi.no_cs
 
 my_module_manager = Module_Manager(spi = spi)
 indicator_gpio_str = "GPIO20"
-my_module_manager.make_module_entry(gpio_str=indicator_gpio_str, chType="in") # indicator light
+my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
         
 # --- functions ---
 
@@ -59,8 +64,6 @@ def handle_client(conn, addr, commandQueue):
         conn.close()
         return
 
-    
-
     # if dpm.msg_type == "d":
     if dpm.data_entries is not None:
         with mutex:
@@ -78,7 +81,7 @@ def handle_client(conn, addr, commandQueue):
     # and there's still stuff remaining on the commandQueue
     while len(commandQueue) > 0:
         # the commandQueueManager will clear the commandQueue when it finishes the batch
-        pass
+        time.sleep(0.001)
         
     dpm_out = DataPacketModel(dataEntries = outQueue, 
                               msg_type = "d", 
@@ -120,11 +123,18 @@ def commandQueueManager(commandQueue, outQueue):
 
     # call the carrier board object to execute the data entries placed on the outQueue
     print("[commandQueueManager] thread has started")
+    err_resp_list = []
+    de_resp = None
+    # commandQueue.append(dataEntry(logical_id="network_status", val=1, time=time.time()))
     while True:
         try:
             if len(commandQueue) != 0:
+                # Create a snapshot of the current queue to process
+                with mutex:
+                    batch = list(commandQueue)
+                
                 # send data to R1000
-                for de in commandQueue: # a list of data entries
+                for de in batch: # iterate over the snapshot
                     
                     # try to find the carrier board object that corresponds to the data entry
                     # this execute_command method handles the different behaviors necessary for inputs vs outputs
@@ -143,24 +153,28 @@ def commandQueueManager(commandQueue, outQueue):
                         with mutex:
                             outQueue.append(de_resp)
                     else:
-                        resp = dataEntry(chType = f"{de.chType}", gpio_str = de.gpio_str, val = de.val, time = time.time())
+                        resp = dataEntry(logical_id= de.logical_id, val = de.val, time = time.time())
                         # populate with an ack response
                         if len(err_resp_list) > 0:
                             resp.val = "NAK" # negative ACK to indicate error
                         with mutex:
                             outQueue.append(resp) # chtype as ao to avoid error raised by dataEntry class
 
-                    
                 with mutex:
-                    # clearing the command queue is the designated
-                    # way of informing the client socket thread that 
-                    # this thread has finished treating the current batch of 
-                    # commands. Now it can send a response
-                    commandQueue.clear()
+                    # Remove the items we just processed from the global queue.
+                    # We use del slice to remove from the front, preserving any new items 
+                    # that might have been appended to the end by handle_client during processing.
+                    del commandQueue[:len(batch)]
+            else:
+                time.sleep(0.001)
                
         except KeyboardInterrupt:
             print("commandQueueManager process terminated by keyboardinterrupt")
             return
+        except Exception as e:
+            print(f"[commandQueueManager] CRITICAL ERROR: {e}")
+            # Sleep briefly to prevent a tight loop if the error is persistent
+            time.sleep(1)
 
 
 # --- main ---
@@ -171,10 +185,10 @@ def commandQueueManager(commandQueue, outQueue):
 host = "192.168.137.10"
 port = 5000
 
-os.system(f"sudo ip addr add {host}/24 dev eth0")
+#os.system(f"sudo ip addr add {host}/24 dev eth0")
 
 s = socket.socket()
-s.settimeout(5) # Set a timeout of n seconds for the accept() call
+s.settimeout(10) # Set a timeout of n seconds for the accept() call
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # solution for "[Error 89] Address already in use". Use before bind()
 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1) # tell TCP to send out data as soon as it arrives in its buffer
 s.bind((host, port))
@@ -191,7 +205,7 @@ all_threads.append(gp)
 
 # turn on the network status indicator
 # 2:blink rapidly, 1:solid on, 0:off
-_, _ = my_module_manager.execute_command(gpio_str = indicator_gpio_str, chType = "in", val = 1)
+_, _ = my_module_manager.execute_command(logical_id= indicator_gpio_str, chType = "in", val = 1)
 
 shouldStop = False
 

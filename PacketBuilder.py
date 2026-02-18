@@ -55,7 +55,8 @@ class dataEntry:
     @chType.setter
     def chType(self, o_chType):
         if not isinstance(o_chType, str) or o_chType not in self.allowed_chTypes:
-            raise TypeError(f"Expected one of {self.allowed_chTypes} as `chType`, but received {str(o_chType)}")
+            pass
+            # raise TypeError(f"Expected one of {self.allowed_chTypes} as `chType`, but received {str(o_chType)}")
         self._chType = o_chType
         
     @property
