@@ -9,7 +9,7 @@ import warnings
 import gpiozero
 import time
 import spidev
-from module_drivers.SN54LS138_Demux import SN54LS138_Demux
+
 import sys
 sys.path.append("..") # include parent directory in path
 
@@ -21,8 +21,6 @@ from module_drivers.Digital_Input_Module import Digital_Input_Module
 from module_drivers.R_Click import R_CLICK
 from module_drivers.Relay_Channel import RELAY_CHANNEL
 from module_drivers.Indicator_Light import INDICATOR_LIGHT
-
-
 
 class Module_Manager:
     # maintain a list of modules (e.g. R_CLICK, COMPARATOR_CLICK)
@@ -37,20 +35,8 @@ class Module_Manager:
         self.spi = spi
         self.module_dict = dict() # checks if logic string is already in the dict, like "SPIx_CARDx_SLOTx"
         self.gpio_manager = GPIO_Manager() # initialize to empty at first
-
-        # initialize Demuxes for controlling the chip select lines
-        # motherboard out demux - analog and digital output modules - T_CLICK_1 and RELAY_CHANNEL
-        self.momOut = SN54LS138_Demux("GPIO17","GPIO27","GPIO22","GPIO7") # (demux1, output select)
-        # currently going to g1, should be going to g2
-
-        # motherboard in demux - analog and digital input modules - R_CLICK and Digital_Input_Module 
-        self.momIn = SN54LS138_Demux("GPIO23","GPIO24","GPIO25","GPIO18") # (demux2, input select)
-
-        # carrier board demux for selecting between the 8 possible modules on the carrier board. 
-        self.car = SN54LS138_Demux("GPIO2","GPIO3","GPIO4") # (demux3, carrier board select) - this is only needed if we have more than 8 modules, which we don't yet. We can hardcode the carrier board selection for now and add this later if we need it.
-        # no g1 because it comes from motherboard
     
-    def execute_command(self, logical_id: str, chType: str, val: float | int) -> Tuple[dataEntry, list[errorEntry]]:
+    def execute_command(self, gpio_str: str, chType: str, val: float | int) -> Tuple[dataEntry, list[errorEntry]]:
         '''
         Executes a command from the socket, given the module's gpio string, channel type, and value.  This class
         is responsible for choosing the appropriate driver instance for the requested channel and for allocating
@@ -63,9 +49,9 @@ class Module_Manager:
         :param str chType: one of ["ao", "ai", "di", "do"]
         :param float|int val: the value to write to the module
         '''
-        if logical_id not in self.module_dict:
-            print(f"[Module_Manager] making a module entry for {logical_id} as a {chType}")
-            self.make_module_entry(logical_id = logical_id, chType = chType)
+        if gpio_str not in self.module_dict:
+            print(f"[Module_Manager] making a module entry for {gpio_str} as a {chType}")
+            self.make_module_entry(gpio_str = gpio_str, chType = chType)
             print(f"[module_manager] made a new module entry. module_dict is now {self.module_dict}")
 
         driverObj = self.module_dict.get(logical_id)[1] # second element in value list is the driver object
@@ -133,7 +119,8 @@ class Module_Manager:
             driverObj = R_CLICK(gpio_cs_pin = self.gpio_manager.get_gpio(logical_id),
                                 spi = self.spi)
         elif chType.lower() == "ao":
-            driverObj = T_CLICK_1(demux_controller = self.momOut, card_controller = self.car, card_pos = card_pos_from_logical_id(logical_id),demux_output = slot_from_logical_id(logical_id), spi = spi_from_logical_id(logical_id))
+            driverObj = T_CLICK_1(gpio_cs_pin = self.gpio_manager.get_gpio(gpio_str),
+                                    spi = self.spi)
         
         elif chType.lower() == "di":
             driverObj = Digital_Input_Module(gpio_in_pin = self.gpio_manager.get_gpio(logical_id))
@@ -141,7 +128,7 @@ class Module_Manager:
             driverObj = RELAY_CHANNEL(gpio_out_pin = self.gpio_manager.get_gpio(logical_id))
         elif chType.lower() == "in": # this channel is not writable by the master. We include it here so that the 
             # Pi can initialize it at its own startup
-            driverObj = INDICATOR_LIGHT(led_pin = self.gpio_manager.get_gpio("GPIO20"))
+            driverObj = INDICATOR_LIGHT(led_pin = self.gpio_manager.get_gpio(gpio_str))
         else:
             driverObj = None
             warnings.warn(f"[module_manager] Invalid channel type {chType}")

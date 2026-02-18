@@ -129,7 +129,7 @@ def commandQueueManager(commandQueue, outQueue):
                     # try to find the carrier board object that corresponds to the data entry
                     # this execute_command method handles the different behaviors necessary for inputs vs outputs
                     try:
-                        de_resp, err_resp_list = my_module_manager.execute_command(gpio_str = de.gpio_str, chType = de.chType, val = de.val)
+                        de_resp, err_resp_list = my_module_manager.execute_command(logical_id= de.logical_id, chType = de.chType, val = de.val)
                     except Exception as e:
                         cleaned_error_str = _clean_string_for_json(str(e))
                         errorList.append(errorEntry(source="RPi", criticalityLevel="High", description=f"unhandled exception: {cleaned_error_str}"))
@@ -168,7 +168,7 @@ def commandQueueManager(commandQueue, outQueue):
 # re-initiate a connection
 
 # host = 'localhost'
-host = "192.168.80.1"
+host = "192.168.137.10"
 port = 5000
 
 os.system(f"sudo ip addr add {host}/24 dev eth0")
