@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 sudo systemctl restart fse_sim_server.service
 sudo systemctl enable fse_sim_server.service
 sudo systemctl daemon-reload

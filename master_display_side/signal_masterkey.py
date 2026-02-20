@@ -8,9 +8,9 @@ def infer_spi_bus(sig_type: str) -> int:
 
         # Inputs → SPI 1, Outputs → SPI 2
         if st.endswith("i"):     # ai, di
-            return 1
+            return 0
         elif st.endswith("o"):   # ao, do
-            return 2
+            return 1
         else:
             raise ValueError(f"Unknown sig_type: {sig_type}")
         
@@ -24,25 +24,28 @@ def infer_card_type(sig_type: str) -> str:
 
 
 def get_card_type_name(signals: list) -> str:
-    """Determine card type name from its signals."""
+    """Determine card type name from its signals using type consistency."""
     if not signals:
-        return "Mixed"
-    
-    # Get the signal type from the first signal
-    sig_type = signals[0].sig_type.lower()
-    
-    if sig_type.startswith("a"):
-        if sig_type.endswith("i"):
+        return "Mixed Channel Types"
+
+    # Extract all signal types (e.g., 'ai', 'ao', 'di', 'do')
+    types = [sig.sig_type.lower() for sig in signals]
+    # Only consider valid types
+    valid_types = {"ai", "ao", "di", "do"}
+    unique_types = set(types)
+
+    if len(unique_types) == 1 and unique_types.pop() in valid_types:
+        t = types[0]
+        if t == "ai":
             return "Analog Inputs"
-        elif sig_type.endswith("o"):
+        elif t == "ao":
             return "Analog Outputs"
-    elif sig_type.startswith("d"):
-        if sig_type.endswith("i"):
+        elif t == "di":
             return "Digital Inputs"
-        elif sig_type.endswith("o"):
+        elif t == "do":
             return "Digital Outputs"
-    
-    return "Mixed"
+    else:
+        return "Mixed Channel Types"
 
 
 class SignalMasterKey(ctk.CTkFrame):

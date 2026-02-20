@@ -1,8 +1,3 @@
-import sys
-sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
-
-
-
 
 from typing import Union, Tuple
 import warnings
@@ -33,14 +28,16 @@ class Module_Manager:
     # also responsible for creating a module if not exist yet
     # or to write a value to a module at the specified gpio pin
 
-    def __init__(self, spi : spidev.SpiDev):
-        self.spi = spi
+    def __init__(self, spi_out, spi_in):
+        self.spi_out = spi_out
+        self.spi_in = spi_in
         self.module_dict = dict() # checks if logic string is already in the dict, like "SPIx_CARDx_SLOTx"
         self.gpio_manager = GPIO_Manager() # initialize to empty at first
-
+   
+       
         # initialize Demuxes for controlling the chip select lines
         # motherboard out demux - analog and digital output modules - T_CLICK_1 and RELAY_CHANNEL
-        self.momOut = SN54LS138_Demux("GPIO17","GPIO27","GPIO22","GPIO7") # (demux1, output select)
+        self.momOut = SN54LS138_Demux("GPIO17","GPIO27","GPIO22","GPIO8") # (demux1, output select)
         # currently going to g1, should be going to g2
 
         # motherboard in demux - analog and digital input modules - R_CLICK and Digital_Input_Module 
@@ -69,7 +66,7 @@ class Module_Manager:
             print(f"[module_manager] made a new module entry. module_dict is now {self.module_dict}")
 
         driverObj = self.module_dict.get(logical_id)[1] # second element in value list is the driver object
-        print(f"[module_manager] driverObj is {driverObj}")
+        #print(f"[module_manager] driverObj is {driverObj}")
         
         valueResponse = None # we will update these later
         errorResponse_list = []
@@ -93,7 +90,8 @@ class Module_Manager:
             valueResponse = dataEntry( logical_id = logical_id, val = ma_reading, time = time.time())
 
             if ma_reading == 0: # there is always a small amount of random noise that can be read on the adc chip to indicate a valid SPI connection
-                errorResponse_list.append(errorEntry(source = "ai", criticalityLevel = "High", description = f"SPI communication error detected:{logical_id}"))
+                pass # REMOVE THIS FOR ACTUAL TESTING - CANNOT DO THIS WHEN DISCONNECTED
+                #errorResponse_list.append(errorEntry(source = "ai", criticalityLevel = "High", description = f"SPI communication error detected:{logical_id}"))
 
         elif chType.lower() == "do": # then it's a relay channel instance
             print(f"[module_manager] entered do branch to write val: {bool(val)}")
@@ -125,20 +123,34 @@ class Module_Manager:
     def make_module_entry(self, logical_id: str, chType: str):
         # add an entry to the dictionary because it doesn't exist yet.
         # Also need to request the gpio_manager to add a GPIO object to itself
-        self.gpio_manager.put_gpio(logical_id, chType = chType)
-        print(f"[module_manager.make_module_entry] after put_gpio, list is {self.gpio_manager.gpio_dict}")
+        if chType == "in":
+            self.gpio_manager.put_gpio(logical_id, chType = chType)
+            #print(f"[module_manager.make_module_entry] after put_gpio, list is {self.gpio_manager.gpio_dict}")
 
         # now create a driver object for the module of the correct type
+                   
         if chType.lower() == "ai":
-            driverObj = R_CLICK(gpio_cs_pin = self.gpio_manager.get_gpio(logical_id),
-                                spi = self.spi)
+            print("-"*100)
+            print("made it into init ai with ", logical_id, " and ", chType)
+            print("-"*100)
+            driverObj = R_CLICK(momIn = self.momIn, 
+                                  card_controller = self.car, 
+                                  card_slot = slot_from_logical_id(logical_id),
+                                  board_slot = card_pos_from_logical_id(logical_id), 
+                                  spi=self.spi_in)
         elif chType.lower() == "ao":
-            driverObj = T_CLICK_1(demux_controller = self.momOut, card_controller = self.car, card_pos = card_pos_from_logical_id(logical_id),demux_output = slot_from_logical_id(logical_id), spi = spi_from_logical_id(logical_id))
-        
-        elif chType.lower() == "di":
-            driverObj = Digital_Input_Module(gpio_in_pin = self.gpio_manager.get_gpio(logical_id))
-        elif chType.lower() == "do":
-            driverObj = RELAY_CHANNEL(gpio_out_pin = self.gpio_manager.get_gpio(logical_id))
+            print("-"*100)
+            print("made it into init ao with ", logical_id, " and ", chType)
+            print("-"*100)
+            driverObj = T_CLICK_1(momOut = self.momOut, 
+                                  card_controller = self.car, 
+                                  card_slot = slot_from_logical_id(logical_id),
+                                  board_slot = card_pos_from_logical_id(logical_id),
+                                  spi = self.spi_out)
+        # elif chType.lower() == "di":
+        #     driverObj = Digital_Input_Module(gpio_in_pin = self.gpio_manager.get_gpio(logical_id))
+        # elif chType.lower() == "do":
+        #     driverObj = RELAY_CHANNEL(gpio_out_pin = self.gpio_manager.get_gpio(logical_id))
         elif chType.lower() == "in": # this channel is not writable by the master. We include it here so that the 
             # Pi can initialize it at its own startup
             driverObj = INDICATOR_LIGHT(led_pin = self.gpio_manager.get_gpio("GPIO20"))
@@ -147,6 +159,7 @@ class Module_Manager:
             warnings.warn(f"[module_manager] Invalid channel type {chType}")
         print(f"[Module_Manager make_module_entry] will insert key {logical_id} with values {chType} and {driverObj}")
         self.module_dict[logical_id] = [chType, driverObj]
+        print(self.module_dict)
         print(f"[module_manager.make_module_entry] new module_dict is {self.module_dict}")
     
     def release_all_modules(self):

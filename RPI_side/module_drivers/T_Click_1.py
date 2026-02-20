@@ -4,6 +4,11 @@
 # Note: the MCP4921's SPI interface is three-wire (i.e. no MISO)
 # OLD VERSION: used an arbitrary CS pin (direct GPIO control)
 
+# import sys
+# sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+
+
+
 import spidev
 import gpiozero # because RPi.GPIO is unsupported on RPi5
 
@@ -35,13 +40,13 @@ class T_CLICK_1:
     #     self.gpio_cs_pin = gpio_cs_pin
     #     self.spi_master = spi
     
-    def __init__(self, demux_controller : SN54LS138_Demux, card_controller : SN54LS138_Demux, card_pos : int, demux_output : int, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
+    def __init__(self, momOut : SN54LS138_Demux, card_controller : SN54LS138_Demux, card_slot : int, board_slot : int, spi: spidev.SpiDev, SHDNB:int=1, GAB:int=1, BUF:int=0): # originally 1,1,0
         ''' T_CLICK_1 board has an MCP4921 (12-bit DAC) that feeds an XTR116 loop driver (voltage-to-current converter).
         This class provides a single function, `write_mA`, that considers both chips' behaviors. 
         
         Inputs: (see MCP4921 datasheet)
-        demux_controller : SN54LS138_Demux instance to manage chip selection
-        demux_output : which demux output (0-7) this module is connected to
+        momOut : SN54LS138_Demux instance to manage chip selection
+        board_slot : which demux output (0-7) this module is connected to
         spi : spidev object to use for the SPI communication
         SHDNB : Shutdown Bar
         GAB : GA Bar "Output Gain Select bit"; if 1, no gain. If 0, 2x gain
@@ -49,16 +54,17 @@ class T_CLICK_1:
         BUF : whether to use input buffer (limits output voltage swing) default is 0 (unbuffered)
         
         '''
-        self.demux_controller = demux_controller
-        self.demux_output = demux_output
+        self.momOut = momOut
+        self.board_slot = board_slot  # THIS IS THE WAY WE SELECT A CARD
+        self.card_slot = card_slot # THIS IS THE WAY WE SELECT THE SLOT ON THE CARD
         self.spi_master = spi
         self.card_controller = card_controller
-        self.card_pos = card_pos
-
+        
+    
         self.SHDNB = SHDNB
         self.GAB = GAB
         self.BUF = BUF
-    
+
     def write_mA(self, mA_val: float) -> None:
         # writeToSPI(spi, cs_obj, t1.get_command_for(maVal)
         if (mA_val < self.CURRENT_OUTPUT_RANGE_MIN) or (mA_val > self.CURRENT_OUTPUT_RANGE_MAX):
@@ -91,14 +97,15 @@ class T_CLICK_1:
         asBytes = int(command).to_bytes(int(T_CLICK_1.BITS_PER_TRANSACTION/8), byteorder="big")
         
         bytesList = [int(b) for b in asBytes] # separate into 8-bit chunks for the SPI channel's limitations on word length
+       
 
-        self.demux_controller.enable()  # Enable demux for this transaction
-        self.demux_controller.select_output(self.demux_output)
-        self.card_controller.select_output(self.card_pos)
+        self.momOut.enable()  # Enable demux for this transaction
+        self.momOut.select_output(self.board_slot)
+        self.card_controller.select_output(self.card_slot)
         self.spi_master.writebytes(bytesList)
-        self.demux_controller.deselect_output()  # Disable after transaction
+        self.momOut.deselect_output()  # Disable after transaction
         self.card_controller.deselect_output()  # Disable after transaction
-        
+        self.momOut.disable()
         # OLD DIRECT GPIO CS PIN VERSION:
         # self.gpio_cs_pin.value = 0 # initiate transaction by pulling low
         # self.spi_master.writebytes(bytesList)

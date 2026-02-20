@@ -3,7 +3,7 @@ def chType_from_logical_id(logical_id: str) -> str:
     Determines chType (ai, ao, di, do) from logical_id string.
     SPI1 = inputs (ai, di)
     SPI2 = outputs (ao, do)
-    Returns 'ai' or 'di' for SPI1, 'ao' or 'do' for SPI2, based on further context if available.
+    
     """
     if logical_id is None:
         return None
@@ -68,5 +68,5 @@ def card_pos_from_logical_id(logical_id: str) -> int:
     match = re.match(r"SPI\d+_CARD(\d+)_SLOT(\d+)", logical_id)
     if not match:
         return None
-    card_num = int(match.group(1)) - 1
+    card_num = int(match.group(1))
     return card_num

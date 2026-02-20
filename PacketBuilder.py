@@ -313,10 +313,9 @@ class DataPacketModel:
         if self.time is None:
             self.time = time.time()
             
-        json_section_str = str(self._pack_json(self.time))
+        json_section_str = json.dumps(self._pack_json(self.time))
             
         packet_string = f"{self.msg_type}:{len(json_section_str)}:{json_section_str}"
-        packet_string = packet_string.replace("'", "\"") # because json.loads requires double quotes
         return packet_string
     
         

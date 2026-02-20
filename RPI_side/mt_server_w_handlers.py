@@ -20,10 +20,12 @@ import os
 
 from gpiozero import Device
 from gpiozero.pins.lgpio import LGPIOFactory
+
 Device.pin_factory = LGPIOFactory()
 
 import sys
 sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+from RPI_side.PacketBuilder_utils import card_pos_from_logical_id, chType_from_logical_id, slot_from_logical_id, spi_from_logical_id
 
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
 from module_manager import Module_Manager
@@ -36,13 +38,24 @@ errorList = [] # most recent at end
 
 mutex = Lock()
 
-# assumes that one spi bus is connected to all modules
-spi = spidev.SpiDev()
-spi.open(0, 0)
-spi.max_speed_hz = 10000
-spi.no_cs
+def setup_spi(bus):
+    spi = spidev.SpiDev()
+    spi.open(bus, 0)
+    if bus:
+        spi.max_speed_hz = 10000
+    else:
+        spi.max_speed_hz = 5000
+    spi.mode = 0
+    spi.bits_per_word = 8
+    spi.threewire
+    spi.no_cs 
+    return spi
 
-my_module_manager = Module_Manager(spi = spi)
+spi_out = setup_spi(0)
+spi_in = setup_spi(1)
+
+
+my_module_manager = Module_Manager(spi_out = spi_out, spi_in = spi_in)
 indicator_gpio_str = "GPIO20"
 my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
         
@@ -139,7 +152,7 @@ def commandQueueManager(commandQueue, outQueue):
                     # try to find the carrier board object that corresponds to the data entry
                     # this execute_command method handles the different behaviors necessary for inputs vs outputs
                     try:
-                        de_resp, err_resp_list = my_module_manager.execute_command(logical_id= de.logical_id, chType = de.chType, val = de.val)
+                        de_resp, err_resp_list = my_module_manager.execute_command(logical_id= de.logical_id, chType = chType_from_logical_id(de.logical_id), val = de.val)
                     except Exception as e:
                         cleaned_error_str = _clean_string_for_json(str(e))
                         errorList.append(errorEntry(source="RPi", criticalityLevel="High", description=f"unhandled exception: {cleaned_error_str}"))

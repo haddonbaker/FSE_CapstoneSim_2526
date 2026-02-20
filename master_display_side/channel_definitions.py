@@ -56,15 +56,15 @@ class Channel_Entry:
         # Determine SPI Bus
         st = self.sig_type.lower()
         if st.endswith("i"):   # ai, di
-            spi_bus = 1
+            spi_bus = 0
         else:                  # ao, do
-            spi_bus = 2
+            spi_bus = 1
 
         # Determine Card and Slot
-        card_num = (self.boardSlotPosition // 8) + 1
-        card_slot = self.boardSlotPosition % 8
+        card = (self.boardSlotPosition // 8) + 1 # WHICH CARD TO SELECT
+        click = self.boardSlotPosition % 8 # WHICH SLOT ON THE CARD TO SELECT
         
-        return f"SPI{spi_bus}_CARD{card_num}_SLOT{card_slot}"
+        return f"SPI{spi_bus}_CARD{card}_SLOT{click}"
         
     def convert_to_packetUnits(self, val):
         # analog (mA) values are converted from engineering units to a mA value

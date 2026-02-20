@@ -66,7 +66,7 @@ class SN54LS138_Demux:
         if g1_pin is None: 
             self.g1 = None
         elif isinstance(g1_pin, str):
-            self.g1 = gpiozero.DigitalOutputDevice(g1_pin, initial_value=1)
+            self.g1 = gpiozero.DigitalOutputDevice(g1_pin, initial_value=0)
         else:
             self.g1 = g1_pin
 
@@ -84,7 +84,7 @@ class SN54LS138_Demux:
         """
         if not 0 <= output_index <= 7:
             raise ValueError(f"Demux output must be 0-7, got {output_index}")
-
+        output_index = output_index - 1
         # Set address lines based on binary representation of output_index
         # Note: For SN54LS138, outputs are active-LOW
         self.a.value = bool(output_index & 0b001)  # LSB
@@ -101,7 +101,7 @@ class SN54LS138_Demux:
         # Disable the demux by pulling G1 LOW
         # This drives all outputs HIGH, effectively deselecting
         if self.g1 != None:
-            self.g1.value = 0  # Disable G1 (active HIGH)
+            self.g1.value = 1  # Disable G1 (active HIGH)
         self.current_output = None
 
     def enable(self) -> None:
