@@ -1,6 +1,7 @@
 # error_log.py
 # Created by Haddon Baker 1/20/26 with assistance from ChatGPT
-
+import sys
+print(sys.executable)
 import customtkinter as ctk
 from datetime import datetime
 

@@ -62,7 +62,7 @@ class Channel_Entry:
 
         # Determine Card and Slot
         card = (self.boardSlotPosition // 8) + 1 # WHICH CARD TO SELECT
-        click = self.boardSlotPosition % 8 # WHICH SLOT ON THE CARD TO SELECT
+        click = (self.boardSlotPosition % 8) + 1 # WHICH SLOT ON THE CARD TO SELECT
         
         return f"SPI{spi_bus}_CARD{card}_SLOT{click}"
         
