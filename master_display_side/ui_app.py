@@ -375,12 +375,29 @@ class SimulatorApp:
             )
             meter.pack(pady=(0, 6))
 
+            name_frame = ctk.CTkFrame(content, fg_color="transparent")
+            name_frame.pack()
+
+            display_name = self.display_name_map.get(name, name)
             label = ctk.CTkLabel(
-                content,
-                text=name,
+                name_frame,
+                text=display_name,
                 font=("Consolas", 14)
             )
-            label.pack()
+            label.pack(side="left")
+
+            pencil_button = ctk.CTkButton(
+                name_frame, text="", image=self.pencil_icon, width=22, height=22,
+                fg_color="transparent", hover_color=("gray85", "gray25"),
+                command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
+            )
+            pencil_button.pack(side="left", padx=(2, 0))
+
+            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+            label.configure(cursor="hand2")
+            pencil_button.configure(cursor="hand2")
+            self._create_tooltip(label, "Click to rename")
+            self._create_tooltip(pencil_button, "Click to rename")
 
             self.ai_meter_objects[name] = meter
 
@@ -451,38 +468,22 @@ class SimulatorApp:
         display_name = self.display_name_map.get(name, name)
         label = ctk.CTkLabel(name_frame, text=display_name, font=("Consolas", 12))
 
-        if removable:
-            # Left-align name for removable signals
-            label.configure(anchor="w")
-            label.grid(row=0, column=0, sticky="w")
+        # Always enable rename/pencil
+        label.configure(anchor="w")
+        label.grid(row=0, column=0, sticky="w")
 
-            # Pencil icon as a button for hover effects
-            pencil_button = ctk.CTkButton(
-                name_frame,
-                text="",
-                image=self.pencil_icon,
-                width=22,
-                height=22,
-                fg_color="transparent",
-                hover_color=("gray85", "gray25"),
-                command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
-            )
-            pencil_button.grid(row=0, column=1, padx=(2, 0))
+        pencil_button = ctk.CTkButton(
+            name_frame, text="", image=self.pencil_icon, width=22, height=22,
+            fg_color="transparent", hover_color=("gray85", "gray25"),
+            command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
+        )
+        pencil_button.grid(row=0, column=1, padx=(2, 0))
 
-            # Bind rename to text label as well
-            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
-            label.configure(cursor="hand2")
-            pencil_button.configure(cursor="hand2")
-            self._create_tooltip(label, "Click to rename")
-            self._create_tooltip(pencil_button, "Click to rename")
-        else:
-            # Right-align name for pre-loaded signals to reduce gap to input field
-            label.configure(anchor="e")
-            label.grid(row=0, column=0, sticky="ew", padx=(0, 4))
-
-            # Add a placeholder to ensure alignment with pencil icons in other rows
-            placeholder = ctk.CTkFrame(name_frame, fg_color="transparent", width=24, height=24)
-            placeholder.grid(row=0, column=1)
+        label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+        label.configure(cursor="hand2")
+        pencil_button.configure(cursor="hand2")
+        self._create_tooltip(label, "Click to rename")
+        self._create_tooltip(pencil_button, "Click to rename")
 
         input_value_entry = ctk.CTkEntry(frame, width=60)
         input_value_entry.grid(row=0, column=1, padx=5, sticky="ew")
@@ -871,8 +872,26 @@ class SimulatorApp:
                 continue
             container = ctk.CTkFrame(self.scrollable_do_frame, fg_color="transparent")
             container.pack(side="left", padx=8, pady=8)
-            label = ctk.CTkLabel(container, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 11))
+
+            name_frame = ctk.CTkFrame(container, fg_color="transparent")
+            name_frame.pack(side="left")
+
+            display_name = self.display_name_map.get(ch_entry.name, ch_entry.name)
+            label = ctk.CTkLabel(name_frame, text=display_name, width=30, anchor="w", font=("Consolas", 11))
             label.pack(side="left")
+
+            pencil_button = ctk.CTkButton(
+                name_frame, text="", image=self.pencil_icon, width=20, height=20,
+                fg_color="transparent", hover_color=("gray85", "gray25"),
+                command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
+            )
+            pencil_button.pack(side="left", padx=(2, 0))
+            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+            label.configure(cursor="hand2")
+            pencil_button.configure(cursor="hand2")
+            self._create_tooltip(label, "Click to rename")
+            self._create_tooltip(pencil_button, "Click to rename")
+
             switch = ctk.CTkSwitch(container, text="", width=20, height=26)
             switch.pack(side="right", padx=(0, 8))
             switch.configure(command=lambda n=name, s=switch: self.toggle_do_switch(n, s))
@@ -919,8 +938,24 @@ class SimulatorApp:
             frame = ctk.CTkFrame(self.scrollable_di_frame)
             frame.pack(side="left", padx=22, pady=10)
 
-            label = ctk.CTkLabel(frame, text=ch_entry.name, width=30, anchor="w", font=("Consolas", 12))
+            name_frame = ctk.CTkFrame(frame, fg_color="transparent")
+            name_frame.pack(side="left")
+
+            display_name = self.display_name_map.get(ch_entry.name, ch_entry.name)
+            label = ctk.CTkLabel(name_frame, text=display_name, width=30, anchor="w", font=("Consolas", 12))
             label.pack(side="left")
+
+            pencil_button = ctk.CTkButton(
+                name_frame, text="", image=self.pencil_icon, width=20, height=20,
+                fg_color="transparent", hover_color=("gray85", "gray25"),
+                command=lambda n=name, lbl=label: self.prompt_rename(n, lbl)
+            )
+            pencil_button.pack(side="left", padx=(2, 0))
+            label.bind("<Button-1>", lambda e, n=name, lbl=label: self.prompt_rename(n, lbl))
+            label.configure(cursor="hand2")
+            pencil_button.configure(cursor="hand2")
+            self._create_tooltip(label, "Click to rename")
+            self._create_tooltip(pencil_button, "Click to rename")
 
             light = ctk.CTkLabel(frame, text="", width=26, height=26, corner_radius=13, fg_color="gray")
             light.pack(side="left", padx=10)
@@ -928,13 +963,14 @@ class SimulatorApp:
             self.di_label_objects[name] = light
 
     def prompt_rename(self, original_name: str, label_widget):
-        """Popup dialog allowing user to rename only dynamically-added signals."""
+        """Popup dialog allowing user to rename signals and edit config."""
         top = ctk.CTkToplevel(self.root)
-        top.title("Rename Signal")
-        top.geometry("300x200")
+        top.title("Signal Configuration")
+        top.geometry("300x350")
 
-        ctk.CTkLabel(top, text=f"Rename {original_name}").pack(pady=10)
+        ctk.CTkLabel(top, text=f"Configure {original_name}", font=("Consolas", 14, "bold")).pack(pady=10)
 
+        ctk.CTkLabel(top, text="Display Name:").pack(pady=(5,0))
         entry = ctk.CTkEntry(top)
         entry.pack(pady=5)
         
@@ -948,7 +984,25 @@ class SimulatorApp:
         current_name = self.display_name_map.get(original_name, original_name)
         entry.insert(0, current_name)
 
-        submit_btn = ctk.CTkButton(top, text="OK")
+        # Config Section (Low/High)
+        ch_entry = self.channel_mgr.channels.get(original_name)
+        low_entry = None
+        high_entry = None
+        
+        if ch_entry and ch_entry.sig_type.lower().startswith('a'):
+             ctk.CTkLabel(top, text="Eng. Units Low:").pack(pady=(5,0))
+             low_entry = ctk.CTkEntry(top)
+             low_entry.pack(pady=5)
+             if ch_entry.realUnitsLowAmount is not None:
+                 low_entry.insert(0, str(ch_entry.realUnitsLowAmount))
+                 
+             ctk.CTkLabel(top, text="Eng. Units High:").pack(pady=(5,0))
+             high_entry = ctk.CTkEntry(top)
+             high_entry.pack(pady=5)
+             if ch_entry.realUnitsHighAmount is not None:
+                 high_entry.insert(0, str(ch_entry.realUnitsHighAmount))
+
+        submit_btn = ctk.CTkButton(top, text="Save")
         submit_btn.pack(pady=10)
 
         def validate_and_update(*args):
@@ -968,6 +1022,17 @@ class SimulatorApp:
                 self.display_name_map[original_name] = new_name
                 # Switch widgets use .configure(text=...)
                 label_widget.configure(text=new_name)
+            
+            if low_entry and high_entry:
+                try:
+                    l_val = float(low_entry.get())
+                    h_val = float(high_entry.get())
+                    ch_entry.realUnitsLowAmount = l_val
+                    ch_entry.realUnitsHighAmount = h_val
+                except ValueError:
+                    error_label.configure(text="Invalid numeric values")
+                    return
+
             top.destroy()
 
         # Bind validation to every keystroke
