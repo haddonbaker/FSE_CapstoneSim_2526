@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict
 from datetime import datetime
 from error_log import ErrorLog
+from signal_history import SignalHistory
 
 import tkinter as tk
 import customtkinter as ctk
@@ -56,6 +57,17 @@ class SimulatorApp:
         else:
             self.pencil_icon = None
 
+        # Load history icon
+        history_icon_path = self.current_dir / "icons" / "history.png"
+        if history_icon_path.exists():
+            self.history_icon = ctk.CTkImage(
+                light_image=Image.open(str(history_icon_path)),
+                dark_image=Image.open(str(history_icon_path)),
+                size=(20, 20)
+            )
+        else:
+            self.history_icon = None
+
         # runtime settings shortcut
         rs = self.config.runtime_settings
         self.error_stack_max_len = rs["error_stack_max_len"]
@@ -65,6 +77,7 @@ class SimulatorApp:
 
         # UI state
         self.error_stack = deque(maxlen=self.error_stack_max_len)  # Now stores dicts: {"message": str, "timestamp": str}
+        self.ao_history = deque(maxlen=1000) # Track last 1000 AO commands
         self.ai_meter_objects: Dict[str, Meter] = {}
         self.ao_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.di_label_objects: Dict[str, ctk.CTkLabel] = {}
@@ -177,6 +190,22 @@ class SimulatorApp:
         )
         self.error_btn.pack(side="left", padx=5)
         self._create_tooltip(self.error_btn, "view error log")
+
+        # History button
+        self.history_btn = ctk.CTkButton(
+            self.top_bar,
+            image=self.history_icon if self.history_icon else None,
+            text="Signal History" if not self.history_icon else "Signal History",
+            font=("Consolas", 12),
+            width=30,
+            height=30,
+            corner_radius=15,
+            fg_color="transparent",
+            hover_color=("gray85", "gray25"),
+            command=self.open_signal_history_popup
+        )
+        self.history_btn.pack(side="left", padx=5)
+        self._create_tooltip(self.history_btn, "view signal history")
     
     def _create_tooltip(self, widget, text):
         """Create a simple tooltip for a widget with proper cleanup."""
@@ -1097,6 +1126,7 @@ class SimulatorApp:
             success, err = self.socket_ctrl.place_single_EngineeringUnits(ch2send=ch, val_in_eng_units=float(val), time=time.time())
         if success:
             entry_widget.delete(0, ctk.END)
+            self._log_ao_action(name, "Single", f"{val} {unit}")
         else:
             # push an errorEntry into queue for existing processing logic to display
             self.socketRespQueue.put(errorEntry(f"{name} single input", criticalityLevel="medium", description=err))
@@ -1119,6 +1149,7 @@ class SimulatorApp:
             startEntry.delete(0, ctk.END)
             stopEntry.delete(0, ctk.END)
             rateEntry.delete(0, ctk.END)
+            self._log_ao_action(name, "Ramp", f"{startVal}->{stopVal} {unit} @ {rateVal} {unit}/s")
         else:
             if unit == "mA":
                 self.socketRespQueue.put(errorEntry(f"{name} ramp input", criticalityLevel="medium", description=f"Invalid ramp command for {chEntry.name}. Valid range: 4 - 20 mA."))
@@ -1193,6 +1224,32 @@ class SimulatorApp:
             
         if len(self.error_stack) == 0:
             self.show_error("")
+
+    def _log_ao_action(self, name, action, details):
+        self.ao_history.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "signal": name,
+            "action": action,
+            "details": details
+        })
+
+    def open_signal_history_popup(self):
+        # Prevent multiple popups
+        if hasattr(self, "history_popup") and self.history_popup.winfo_exists():
+            self.history_popup.lift()
+            return
+
+        self.history_popup = ctk.CTkToplevel(self.root)
+        self.history_popup.title("Signal History")
+        self.history_popup.geometry(f"{self.root.winfo_screenwidth()-50}x{self.root.winfo_screenheight()-50}")
+
+        # Keep popup on top of main window
+        self.history_popup.transient(self.root)
+        self.history_popup.grab_set()
+
+        # Build history page inside popup
+        history_page = SignalHistory(self.history_popup, self.ao_history)
+        history_page.pack(fill="both", expand=True, padx=10, pady=10)
 
     def show_connection_status(self, online: bool | None, message: str = ""):
         if online is None:
