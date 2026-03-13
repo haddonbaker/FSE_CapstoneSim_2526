@@ -16,13 +16,12 @@ class GPIOEX:
     GPIO = 0x09
     OLAT = 0x0A
 
-    def __init__(self, bus=0, device=0, hw_addr=0):
+    def __init__(self, spidev, hw_addr=0):
         max_speed=1000000
         self.resetPin = gpiozero.DigitalOutputDevice("GPIO26", initial_value =1 )
-        self.spi = spidev.SpiDev()
-        self.spi.open(bus, device)
+        self.spi = spidev
         self.spi.max_speed_hz = max_speed
-        self.spi.mode = 0
+        
 
         self.hw_addr = hw_addr & 0x03
 
@@ -96,7 +95,9 @@ class GPIOEX:
 # Test code
 # ------------------------
 if __name__ == "__main__":
-    mcp = GPIOEX(bus=0, device=0, hw_addr=0, max_speed=1000000)
+    spi = spidev.SpiDev()
+    spi.open(0, 0)  # Open SPI bus 0, device 0 (CE0)    
+    mcp = GPIOEX(spidev=spi, hw_addr=0)
 
     # Set all pins as outputs
     mcp.set_direction(0x00)
