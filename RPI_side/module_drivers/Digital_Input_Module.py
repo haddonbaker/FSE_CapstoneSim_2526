@@ -5,31 +5,32 @@ Created on 1/17/25
 @author: REYNOLDSPG21
 """
 
-# import spidev
-import time
-import gpiozero # because RPi.GPIO is unsupported on RPi5
-
-# import sys
-# sys.path.insert(0, "/home/fsepi51/Documents/FSE_Capstone_sim") # allow this file to find other project modules
+import gpiozero
 
 class Digital_Input_Module:
-    def __init__(self, gpio_in_pin : gpiozero.DigitalInputDevice):
-        self.gpio_in_pin = gpio_in_pin
-    
+    def __init__(self, mcp=None, pin: int | None = None):
+        self.mcp = mcp
+        self.pin = pin
+
     def readState(self) -> int:
-        return int(self.gpio_in_pin.value)
-    
-    def close(self):
-        pass
+        if self.mcp is not None and self.pin is not None:
+            return int(self.mcp.read_pin(self.pin))
+        else:
+            raise RuntimeError("Digital_Input_Module has no input interface configured")
+
+    def close(self):pass
 
 if __name__ == "__main__":
     my_pin = gpiozero.DigitalInputDevice("GPIO19", pull_up=True)
-    dip = DigitalInput_Pullup(gpio_in_pin = my_pin)
-    while True:
-        try:
-            print(f"state is {dip.readState()}")
+    dim = Digital_Input_Module(gpio_in_pin=my_pin)
+
+    import time
+    try:
+        while True:
+            print(f"state is {dim.readState()}")
             time.sleep(0.5)
-        except KeyboardInterrupt:
-            break
-    dip.close()
+    except KeyboardInterrupt:
+        pass
+
+    dim.close()
     my_pin.close()
