@@ -79,7 +79,7 @@ class SimulatorApp:
         self.error_stack = deque(maxlen=self.error_stack_max_len)  # Now stores dicts: {"message": str, "timestamp": str}
         self.ao_history = deque(maxlen=1000) # Track last 1000 AO commands
         self.ai_meter_objects: Dict[str, Meter] = {}
-        self.ao_label_objects: Dict[str, ctk.CTkLabel] = {}
+        self.ao_entry_objects: Dict[str, ctk.CTkEntry] = {}
         self.di_label_objects: Dict[str, ctk.CTkLabel] = {}
         self.do_switches: Dict[str, ctk.CTkSwitch] = {}
         self.display_name_map = {}     # original_name → UI_display_name
@@ -464,11 +464,11 @@ class SimulatorApp:
             drateLabel.configure(text=f"Rate ({unit}/s)")
 
         frame = ctk.CTkFrame(self.scrollable_ao_frame)
-        existing_names = sorted(self.ao_label_objects.keys(), key=self._natural_sort_key)
+        existing_names = sorted(self.ao_entry_objects.keys(), key=self._natural_sort_key)
         insert_before = None
         for existing in existing_names:
             if self._natural_sort_key(name) < self._natural_sort_key(existing):
-                insert_before = self.ao_label_objects[existing].master  # get parent frame
+                insert_before = self.ao_entry_objects[existing].master  # get parent frame
                 break
 
         if insert_before is not None:
@@ -559,9 +559,7 @@ class SimulatorApp:
             )
             remove_btn.grid(row=0, column=5, padx=(5))
 
-        lastSentLabel = ctk.CTkLabel(frame, text="")
-        lastSentLabel.grid(row=0, column=5, padx=5, sticky="e")
-        self.ao_label_objects[name] = lastSentLabel
+        self.ao_entry_objects[name] = input_value_entry
 
 
     def _populate_analog_outputs(self):
@@ -599,8 +597,8 @@ class SimulatorApp:
         dropdown_frame.destroy()
 
         # Update label tracking
-        if name in self.ao_label_objects:
-            del self.ao_label_objects[name]
+        if name in self.ao_entry_objects:
+            del self.ao_entry_objects[name]
 
         # Update the channel’s visibility state
         ch_entry = self.channel_mgr.channels.get(name)
@@ -1120,13 +1118,27 @@ class SimulatorApp:
             return
         unit = str(segmentedUnitButton.get())
         ch = self.channel_mgr.get_channel_entry(name)
+        
+        # Calculate both values for display/logging
         if unit == "mA":
-            success, err = self.socket_ctrl.place_single_mA(ch2send=ch, mA_val=float(val), time=time.time())
+            mA_val = float(val)
+            eng_val = ch.mA_to_EngineeringUnits(mA_val)
+            success, err = self.socket_ctrl.place_single_mA(ch2send=ch, mA_val=mA_val, time=time.time())
         else:
-            success, err = self.socket_ctrl.place_single_EngineeringUnits(ch2send=ch, val_in_eng_units=float(val), time=time.time())
+            eng_val = float(val)
+            mA_val = ch.EngineeringUnits_to_mA(eng_val)
+            success, err = self.socket_ctrl.place_single_EngineeringUnits(ch2send=ch, val_in_eng_units=eng_val, time=time.time())
+            
         if success:
             entry_widget.delete(0, ctk.END)
-            self._log_ao_action(name, "Single", f"{val} {unit}")
+            self.root.focus()
+            
+            # Display compact format { xxx / xx } without unit labels in the send box
+            display_str = f"{eng_val:.0f} / {mA_val:.0f}"
+            entry_widget.configure(placeholder_text=display_str)
+            
+            # Log with units for history visibility
+            self._log_ao_action(name, "Single", f"{eng_val:.3f} {ch.units} / {mA_val:.2f} mA")
         else:
             # push an errorEntry into queue for existing processing logic to display
             self.socketRespQueue.put(errorEntry(f"{name} single input", criticalityLevel="medium", description=err))
@@ -1140,16 +1152,28 @@ class SimulatorApp:
             return
         unit = str(segmentedUnitButton.get())
         chEntry = self.channel_mgr.get_channel_entry(name)
+        
+        orig_start = startVal
+        orig_stop = stopVal
+        
         if unit != "mA":
             startVal = chEntry.EngineeringUnits_to_mA(startVal)
             stopVal = chEntry.EngineeringUnits_to_mA(stopVal)
             rateVal = chEntry.EngineeringUnitsRate_to_mARate(rateVal)
+            
         success = self.socket_ctrl.place_ramp(ch2send=chEntry, start_mA=startVal, stop_mA=stopVal, stepPerSecond_mA=rateVal)
         if success:
             startEntry.delete(0, ctk.END)
             stopEntry.delete(0, ctk.END)
             rateEntry.delete(0, ctk.END)
-            self._log_ao_action(name, "Ramp", f"{startVal}->{stopVal} {unit} @ {rateVal} {unit}/s")
+            self.root.focus()
+            
+            if unit == "mA":
+                log_str = f"{chEntry.mA_to_EngineeringUnits(orig_start):.3f}->{chEntry.mA_to_EngineeringUnits(orig_stop):.3f} {chEntry.units} ({orig_start:.2f}->{orig_stop:.2f} mA) @ {rateVal:.2f} mA/s"
+            else:
+                log_str = f"{orig_start:.3f}->{orig_stop:.3f} {chEntry.units} ({startVal:.2f}->{stopVal:.2f} mA) @ {rateVal:.2f} mA/s"
+                
+            self._log_ao_action(name, "Ramp", log_str)
         else:
             if unit == "mA":
                 self.socketRespQueue.put(errorEntry(f"{name} ramp input", criticalityLevel="medium", description=f"Invalid ramp command for {chEntry.name}. Valid range: 4 - 20 mA."))
@@ -1268,11 +1292,11 @@ class SimulatorApp:
         while not self.socketRespQueue.empty():
             sockResp = self.socketRespQueue.get()
             
-            if self.enable_verbose_logging:
-                print(f"sockResp is {sockResp}")
+            
             if isinstance(sockResp, errorEntry):
                 # analog channel errors usually prefix 'a' and include gpio_str in description after ':'
-                
+                if self.enable_verbose_logging and sockResp.source.lower()[0] != "a" and sockResp.source.lower() != "di":
+                    print(f"sockResp is {sockResp}")
                 if sockResp.source.lower()[0] == "a":
                     try:
                         logical_id = sockResp.description.split(":")[1].strip()
@@ -1298,13 +1322,15 @@ class SimulatorApp:
                     continue
                 if chEntry.sig_type.lower() == "ai":
                     if debug_statements == 1:
-                        print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val:.2f} mA")
+                        pass
+                        # print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val:.2f} mA")
                     if chEntry.name in self.ai_meter_objects:
                         meterObj = self.ai_meter_objects[chEntry.name]
                         meterObj.set(chEntry.mA_to_EngineeringUnits(sockResp.val))
                 elif chEntry.sig_type.lower() == "di":
                     if debug_statements == 1:
-                        print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}")
+                        pass
+                        # print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}")
                     if chEntry.name in self.di_label_objects:
                         if int(sockResp.val) == 1:
                             self.di_label_objects[chEntry.name].configure(fg_color="green")
@@ -1312,15 +1338,22 @@ class SimulatorApp:
                             self.di_label_objects[chEntry.name].configure(fg_color="gray")
                 elif chEntry.sig_type.lower() == "do":
                     # response is ack from RPi
+                    print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}, logical_id={sockResp.logical_id}")
                     if chEntry.name in self.do_switches:
                         self.do_switches[chEntry.name].configure(state="normal")
                 elif "ao" in chEntry.sig_type.lower():
-                    labelObj = self.ao_label_objects.get(chEntry.name)
-                    if labelObj:
+                    entryObj = self.ao_entry_objects.get(chEntry.name)
+                    if entryObj:
                         if sockResp.val == "NAK":
-                            labelObj.configure(text="ERR")
+                            entryObj.configure(placeholder_text="ERR")
                         else:
-                            labelObj.configure(text=f"{sockResp.val:.1f} mA")
+                            try:
+                                mA_resp = float(sockResp.val)
+                                eng_resp = chEntry.mA_to_EngineeringUnits(mA_resp)
+                                display_str = f"{eng_resp:.3f} / {mA_resp:.2f}"
+                                entryObj.configure(placeholder_text=display_str)
+                            except ValueError:
+                                pass
 
         # schedule periodic reads for ai and di channels
         for name, meter in self.ai_meter_objects.items():
