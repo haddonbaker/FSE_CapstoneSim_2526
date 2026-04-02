@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # determine paths
     current_dir = Path(__file__).resolve().parent
     config_path = current_dir / "t_config.json"
-    logs_dir = current_dir.parent / "logs"
+    logs_dir = current_dir / "logs"
 
     # cleanup old log files on startup
     cleanup_old_logs(str(logs_dir), days_threshold=15)
