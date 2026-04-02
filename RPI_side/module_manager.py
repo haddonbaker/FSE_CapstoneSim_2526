@@ -96,7 +96,8 @@ class Module_Manager:
         elif chType.lower() == "do": # then it's a relay channel instance
             print(f"[module_manager] entered do branch to write val: {bool(val)}")
             driverObj.writeState(state = bool(val))
-            # don't update either the value response or the error response list
+            # return ACK response with the value that was written
+            valueResponse = dataEntry(logical_id = logical_id, val = int(val), time = time.time())
         elif chType.lower() == "di": # then it's a comparator channel instance
             di_value = int(driverObj.readState())
             valueResponse = dataEntry(logical_id = logical_id, val = di_value, time = time.time())

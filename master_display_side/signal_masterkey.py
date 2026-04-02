@@ -6,11 +6,11 @@ import customtkinter as ctk
 def infer_spi_bus(sig_type: str) -> int:
         st = sig_type.strip().lower()
 
-        # Inputs → SPI 1, Outputs → SPI 2
+        # Inputs → SPI 1, Outputs → SPI 0
         if st.endswith("i"):     # ai, di
-            return 0
-        elif st.endswith("o"):   # ao, do
             return 1
+        elif st.endswith("o"):   # ao, do
+            return 0
         else:
             raise ValueError(f"Unknown sig_type: {sig_type}")
         

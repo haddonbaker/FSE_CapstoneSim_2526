@@ -4,3 +4,6 @@
 *.iml
 .venv
 RPI_side/test_demux.py
+_archive/
+__pycache__/
+*.pyz

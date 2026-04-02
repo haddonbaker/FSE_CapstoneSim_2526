@@ -20,7 +20,7 @@ from CommandQueue import CommandQueue
 from channel_definitions import Channel_Entry # the configuration that defines which signals are connected to the Carrier board
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
 
-debug_statements = 1
+debug_statements = 0
 
 
 class SocketSenderManager:

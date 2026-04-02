@@ -46,19 +46,20 @@ class Channel_Entry:
     def _compute_logical_id(self) -> str | None:
         """
         Computes the logical ID string (e.g., 'SPI1_CARD1_SLOT1') based on signal type and board slot.
+        Outputs (AO, DO) -> SPI 0
         Inputs (AI, DI) -> SPI 1
-        Outputs (AO, DO) -> SPI 2
         Card and Slot are derived from boardSlotPosition (Card * 8 + Slot).
         """
         if self.boardSlotPosition is None:
             return None
 
         # Determine SPI Bus
+        # Outputs (AO, DO) -> SPI bus 0; Inputs (AI, DI) -> SPI bus 1
         st = self.sig_type.lower()
         if st.endswith("i"):   # ai, di
-            spi_bus = 0
-        else:                  # ao, do
             spi_bus = 1
+        else:                  # ao, do
+            spi_bus = 0
 
         # Determine Card and Slot
         card = (self.boardSlotPosition // 8) + 1 # WHICH CARD TO SELECT
