@@ -206,6 +206,7 @@ class SimulatorApp:
         )
         self.history_btn.pack(side="left", padx=5)
         self._create_tooltip(self.history_btn, "view signal history")
+
     
     def _create_tooltip(self, widget, text):
         """Create a simple tooltip for a widget with proper cleanup."""
@@ -1330,7 +1331,7 @@ class SimulatorApp:
                 elif chEntry.sig_type.lower() == "di":
                     if debug_statements == 1:
                         pass
-                        # print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}")
+                        print(f"DEBUG [UI Received]: Signal={chEntry.name}, Val={sockResp.val}")
                     if chEntry.name in self.di_label_objects:
                         if int(sockResp.val) == 1:
                             self.di_label_objects[chEntry.name].configure(fg_color="green")
@@ -1350,7 +1351,7 @@ class SimulatorApp:
                             try:
                                 mA_resp = float(sockResp.val)
                                 eng_resp = chEntry.mA_to_EngineeringUnits(mA_resp)
-                                display_str = f"{eng_resp:.3f} / {mA_resp:.2f}"
+                                display_str = f"{eng_resp:.0f} / {mA_resp:.0f}"
                                 entryObj.configure(placeholder_text=display_str)
                             except ValueError:
                                 pass

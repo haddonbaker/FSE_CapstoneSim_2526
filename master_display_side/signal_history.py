@@ -1,5 +1,4 @@
 # created by Haddon Baker 3/9 with assistance from Gemini Code Assist
-# created by Haddon Baker 3/9 with assistance from Gemini Code Assist
 import customtkinter as ctk
 
 class SignalHistory(ctk.CTkFrame):
