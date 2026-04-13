@@ -5,17 +5,16 @@ Created on Mon Oct 21 16:06:35 2024
 @author: REYNOLDSPG21
 """
 # import binascii
+import sys
+sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+
+
+
 import spidev
 import gpiozero
 import time
 import math
 
-import sys
-sys.path.insert(0, "/home/fsepi51/Documents/FSE_Capstone_sim") # allow this file to find other project modules
-
-# these lines to free any previous lgpio resources. see https://forums.raspberrypi.com/viewtopic.php?t=362014
-import os
-os.environ['GPIO_PIN_FACTORY'] = os.environ.get('GPIOZERO_PIN_FACTORY','mock')
 
 # import spidev
 # import time

@@ -66,7 +66,7 @@ class SN54LS138_Demux:
         if g1_pin is None: 
             self.g1 = None
         elif isinstance(g1_pin, str):
-            self.g1 = gpiozero.DigitalOutputDevice(g1_pin, initial_value=0)
+            self.g1 = None
         else:
             self.g1 = g1_pin
 
@@ -82,9 +82,10 @@ class SN54LS138_Demux:
         :param output_index: The demux output to select (0-7)
         :raises ValueError: if output_index is not in range [0, 7]
         """
+        output_index = output_index - 1
         if not 0 <= output_index <= 7:
             raise ValueError(f"Demux output must be 0-7, got {output_index}")
-        output_index = output_index - 1
+        
         # Set address lines based on binary representation of output_index
         # Note: For SN54LS138, outputs are active-LOW
         self.a.value = bool(output_index & 0b001)  # LSB

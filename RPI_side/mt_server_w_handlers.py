@@ -11,12 +11,13 @@ Created on Fri Dec 20 15:30:19 2024
 
 import socket
 import threading
+import json
 from threading import Thread, Lock
 import time
 from datetime import datetime
 import spidev
 import os
-
+import gpiozero
 
 from gpiozero import Device
 from gpiozero.pins.lgpio import LGPIOFactory
@@ -24,7 +25,7 @@ from gpiozero.pins.lgpio import LGPIOFactory
 Device.pin_factory = LGPIOFactory()
 
 import sys
-sys.path.insert(0, "/home/fsesim/fresh") # allow this file to find other project modules
+sys.path.insert(0, "/home/fsesim2/capstone_backup/fresh") # allow this file to find other project modules
 from RPI_side.PacketBuilder_utils import card_pos_from_logical_id, chType_from_logical_id, slot_from_logical_id, spi_from_logical_id
 
 from PacketBuilder import dataEntry, errorEntry, DataPacketModel
@@ -54,11 +55,16 @@ def setup_spi(bus):
 spi_out = setup_spi(0)
 spi_in = setup_spi(1)
 
+resetPin = gpiozero.DigitalOutputDevice("GPIO26", initial_value =1 ) # needed high to write to GPIO expander
+resetPin.on()
+
 
 my_module_manager = Module_Manager(spi_out = spi_out, spi_in = spi_in)
-indicator_gpio_str = "GPIO20"
+indicator_gpio_str = "GPIO5"
 my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
-        
+indicator_gpio_str = "GPIO6"
+my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
+                
 # --- functions ---
 
 def handle_client(conn, addr, commandQueue):
@@ -67,7 +73,7 @@ def handle_client(conn, addr, commandQueue):
     # for the GPIO handler thread to place outgoing data onto the outQueue.
     # Once the outqueue is non-empty, this thread sends a response over the active socket
 
-    print("[thread] new thread for handling the client has started")
+    #print("[thread] new thread for handling the client has started")
 
     # recv message
     try:
@@ -81,7 +87,7 @@ def handle_client(conn, addr, commandQueue):
     if dpm.data_entries is not None:
         with mutex:
             commandQueue += dpm.data_entries # now the GPIO handler can start executing thes commands
-        print(f"[handle client] placed {len(dpm.data_entries)} dpm entries on command queue")
+       # print(f"[handle client] placed {len(dpm.data_entries)} dpm entries on command queue")
     else :
         print("[handle client] received empty data packet")
     
@@ -151,7 +157,8 @@ def commandQueueManager(commandQueue, outQueue):
                     
                     # try to find the carrier board object that corresponds to the data entry
                     # this execute_command method handles the different behaviors necessary for inputs vs outputs
-                    try:
+                    try:                          
+                        print(f"got data entry signal for {de}")
                         de_resp, err_resp_list = my_module_manager.execute_command(logical_id= de.logical_id, chType = chType_from_logical_id(de.logical_id), val = de.val)
                     except Exception as e:
                         cleaned_error_str = _clean_string_for_json(str(e))
@@ -195,7 +202,7 @@ def commandQueueManager(commandQueue, outQueue):
 # re-initiate a connection
 
 # host = 'localhost'
-host = "192.168.137.10"
+host = "192.168.137.11"
 port = 5000
 
 #os.system(f"sudo ip addr add {host}/24 dev eth0")
@@ -233,7 +240,7 @@ try:
                 # print("socket timed out... begin next loop")
                 continue
         
-            print("Client:", addr)
+            #print("Client:", addr)
             
             t = threading.Thread(target=handle_client, args=(conn, addr, commandQueue), daemon=True)
             # set daemon to True so that the thread will terminate when the main thread terminates
@@ -249,7 +256,8 @@ finally:
     print("done")
     
     print("closing spi...", end = "")
-    spi.close()
+    spi_out.close()
+    spi_in.close()
     print("done")
     
     print("shutting down threads.")

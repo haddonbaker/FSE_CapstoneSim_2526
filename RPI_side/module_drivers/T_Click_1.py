@@ -110,7 +110,8 @@ class T_CLICK_1:
         # self.gpio_cs_pin.value = 0 # initiate transaction by pulling low
         # self.spi_master.writebytes(bytesList)
         # self.gpio_cs_pin.value = 1
-    
+
+ 
     def close(self) -> None:
         self.write_mA(self.CURRENT_OUTPUT_RANGE_MIN)
         return
