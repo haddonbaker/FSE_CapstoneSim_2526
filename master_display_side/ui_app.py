@@ -126,7 +126,7 @@ class SimulatorApp:
 
     def _build_root_window(self):
         self.root = ctk.CTk()
-        icon_path = self.current_dir / "app_icon.ico"
+        icon_path = self.current_dir / "icons" / "app_icon.ico"
         if icon_path.exists():
             try:
                 self.root.wm_iconbitmap(str(icon_path))

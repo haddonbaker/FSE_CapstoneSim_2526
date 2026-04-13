@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Calibri, sans-serif; font-size: 11pt; margin: 60px; color: #000; }
+  h1 { font-size: 16pt; font-weight: bold; margin-bottom: 6px; }
+  h2 { font-size: 13pt; font-weight: bold; margin-top: 28px; margin-bottom: 4px; }
+  p { margin: 6px 0; }
+  code { font-family: Consolas, monospace; background-color: #f2f2f2; padding: 1px 4px; font-size: 9.5pt; }
+  pre { font-family: Consolas, monospace; background-color: #f2f2f2; padding: 12px 16px; font-size: 9.5pt; margin: 10px 0; border: 1px solid #ccc; }
+  ul { margin: 6px 0 6px 0; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<h1>Appendix: Signal Configuration Fields</h1>
+<p>Each entry in the <code>signals</code> array of the config file describes one channel. The following explains what each field means, illustrated with one analog and one digital example.</p>
+
+<hr>
+
+<h2>Analog Example &mdash; DPT (Discharge Pressure Transmitter)</h2>
+<pre>{
+    "name": "DPT",
+    "sig_type": "ao",
+    "boardSlotPosition": 0,
+    "engineeringUnits": "PSI",
+    "engineeringUnitsLowAmount": 0.0,
+    "engineeringUnitsHighAmount": 200.0,
+    "showOnGUI": true,
+    "offset_calib_constant": 0,
+    "slope_calib_constant": 1
+}</pre>
+
+<ul>
+  <li><strong>name</strong> &mdash; The label used to identify the signal throughout the software and on the GUI. This is the key the application uses internally to look up the channel.</li>
+  <li><strong>sig_type</strong> &mdash; The signal type and direction. <code>"ao"</code> means analog output (the simulator sends a 4&ndash;20 mA signal to the control panel). The four valid values are <code>"ao"</code>, <code>"ai"</code>, <code>"do"</code>, and <code>"di"</code>.</li>
+  <li><strong>boardSlotPosition</strong> &mdash; The physical slot number of the module on the carrier board. The software uses this to compute which SPI bus, card, and slot to address when sending or reading the signal. Analog and digital outputs share one SPI bus; inputs share another.</li>
+  <li><strong>engineeringUnits</strong> &mdash; The unit label displayed alongside the signal value on the GUI (e.g. PSI, Amps, %). This is display-only and does not affect calculations.</li>
+  <li><strong>engineeringUnitsLowAmount</strong> &mdash; The real-world value that corresponds to 4 mA (the bottom of the 4&ndash;20 mA range). For DPT this is 0.0 PSI, meaning a 4 mA output represents 0 PSI.</li>
+  <li><strong>engineeringUnitsHighAmount</strong> &mdash; The real-world value that corresponds to 20 mA (the top of the range). For DPT this is 200.0 PSI, meaning a 20 mA output represents 200 PSI. All intermediate values are linearly interpolated between these two bounds. Note that low and high can be swapped to represent an inverted signal (e.g. a sensor that reads high at low pressure).</li>
+  <li><strong>showOnGUI</strong> &mdash; Controls whether this signal appears as an interactive widget on the main display. Spare or unused channels are set to <code>false</code> to keep the interface uncluttered; they can still be addressed programmatically.</li>
+  <li><strong>offset_calib_constant</strong> &mdash; <em>(Analog inputs only)</em> The additive offset <em>b</em> in the calibration formula <em>y&nbsp;=&nbsp;mx&nbsp;+&nbsp;b</em>, applied to the raw mA reading before converting to engineering units. Used to correct for a sensor that reads consistently high or low. A value of <code>0</code> applies no offset correction.</li>
+  <li><strong>slope_calib_constant</strong> &mdash; <em>(Analog inputs only)</em> The multiplicative slope <em>m</em> in the same calibration formula. Used to correct for a sensor whose output scale is slightly off. A value of <code>1</code> applies no slope correction. Together with <code>offset_calib_constant</code>, these two constants define a linear correction that is applied before the mA-to-engineering-units conversion.</li>
+</ul>
+
+<hr>
+
+<h2>Digital Example &mdash; MTR1 (Motor 1)</h2>
+<pre>{
+    "name": "MTR1",
+    "sig_type": "do",
+    "boardSlotPosition": 32,
+    "engineeringUnits": null,
+    "engineeringUnitsLowAmount": 0,
+    "engineeringUnitsHighAmount": 1,
+    "showOnGUI": true
+}</pre>
+
+<ul>
+  <li><strong>name</strong> &mdash; Same as analog: the identifier used by the software and displayed on the GUI.</li>
+  <li><strong>sig_type</strong> &mdash; <code>"do"</code> means digital output (the simulator drives a relay on or off). The signal carries only two states: on or off.</li>
+  <li><strong>boardSlotPosition</strong> &mdash; Same as analog: the physical slot number used to route the command to the correct hardware module. Digital output slots begin at 32 per the board layout.</li>
+  <li><strong>engineeringUnits</strong> &mdash; <code>null</code> for all digital signals. There is no continuous physical unit; the signal is simply on or off.</li>
+  <li><strong>engineeringUnitsLowAmount</strong> &mdash; Always <code>0</code> for digital signals, representing the off (open) state.</li>
+  <li><strong>engineeringUnitsHighAmount</strong> &mdash; Always <code>1</code> for digital signals, representing the on (closed) state.</li>
+  <li><strong>showOnGUI</strong> &mdash; Same as analog: whether the signal appears as a control on the main display.</li>
+</ul>
+
+<p>Digital signals do not use calibration constants. The value sent or received is always either <code>0</code> or <code>1</code>.</p>
+
+</body>
+</html>

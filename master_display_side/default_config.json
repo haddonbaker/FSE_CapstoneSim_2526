@@ -29,7 +29,7 @@
             "name": "IAT",
             "sig_type": "ao",
             "boardSlotPosition": 2,
-            "engineeringUnits": "Amps",
+            "engineeringUnits": "PSI",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 300.0,
             "showOnGUI": true
@@ -38,7 +38,7 @@
             "name": "IOT",
             "sig_type": "ao",
             "boardSlotPosition": 3,
-            "engineeringUnits": "Amps",
+            "engineeringUnits": "PSI",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 300.0,
             "showOnGUI": true
@@ -47,7 +47,7 @@
             "name": "MAT",
             "sig_type": "ao",
             "boardSlotPosition": 4,
-            "engineeringUnits": "Amps",
+            "engineeringUnits": "PSI",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 300.0,
             "showOnGUI": true
@@ -224,13 +224,13 @@
             "showOnGUI": false
         },
         {
-            "name": "AO24",
+            "name": "DPTT",
             "sig_type": "ao",
             "boardSlotPosition": 24,
             "engineeringUnits": "PSI",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 200.0,
-            "showOnGUI": false
+            "showOnGUI": true
         },
         {
             "name": "AO25",
@@ -296,9 +296,153 @@
             "showOnGUI": false
         },
         {
+            "name": "MTR1",
+            "sig_type": "do",
+            "boardSlotPosition": 32,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": true
+        },
+        {
+            "name": "DO1",
+            "sig_type": "do",
+            "boardSlotPosition": 33,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO2",
+            "sig_type": "do",
+            "boardSlotPosition": 34,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO3",
+            "sig_type": "do",
+            "boardSlotPosition": 35,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO4",
+            "sig_type": "do",
+            "boardSlotPosition": 36,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO5",
+            "sig_type": "do",
+            "boardSlotPosition": 37,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO6",
+            "sig_type": "do",
+            "boardSlotPosition": 38,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO7",
+            "sig_type": "do",
+            "boardSlotPosition": 39,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO8",
+            "sig_type": "do",
+            "boardSlotPosition": 40,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO9",
+            "sig_type": "do",
+            "boardSlotPosition": 41,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO10",
+            "sig_type": "do",
+            "boardSlotPosition": 42,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO11",
+            "sig_type": "do",
+            "boardSlotPosition": 43,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO12",
+            "sig_type": "do",
+            "boardSlotPosition": 44,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO13",
+            "sig_type": "do",
+            "boardSlotPosition": 45,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO14",
+            "sig_type": "do",
+            "boardSlotPosition": 46,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
+            "name": "DO15",
+            "sig_type": "do",
+            "boardSlotPosition": 47,
+            "engineeringUnits": null,
+            "engineeringUnitsLowAmount": 0,
+            "engineeringUnitsHighAmount": 1,
+            "showOnGUI": false
+        },
+        {
             "name": "IVT",
             "sig_type": "ai",
-            "boardSlotPosition": 32,
+            "boardSlotPosition": 48,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -309,7 +453,7 @@
         {
             "name": "UVT",
             "sig_type": "ai",
-            "boardSlotPosition": 33,
+            "boardSlotPosition": 49,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 100.0,
             "engineeringUnitsHighAmount": 0.0,
@@ -320,7 +464,7 @@
         {
             "name": "AI2",
             "sig_type": "ai",
-            "boardSlotPosition": 34,
+            "boardSlotPosition": 50,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -331,7 +475,7 @@
         {
             "name": "AI3",
             "sig_type": "ai",
-            "boardSlotPosition": 35,
+            "boardSlotPosition": 51,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -342,7 +486,7 @@
         {
             "name": "AI4",
             "sig_type": "ai",
-            "boardSlotPosition": 36,
+            "boardSlotPosition": 52,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -353,7 +497,7 @@
         {
             "name": "AI5",
             "sig_type": "ai",
-            "boardSlotPosition": 37,
+            "boardSlotPosition": 53,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -364,7 +508,7 @@
         {
             "name": "AI6",
             "sig_type": "ai",
-            "boardSlotPosition": 38,
+            "boardSlotPosition": 54,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
@@ -375,157 +519,13 @@
         {
             "name": "AI7",
             "sig_type": "ai",
-            "boardSlotPosition": 39,
+            "boardSlotPosition": 55,
             "engineeringUnits": "%",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 100.0,
             "showOnGUI": false,
             "offset_calib_constant": 0,
             "slope_calib_constant": 1
-        },
-        {
-            "name": "MTR1",
-            "sig_type": "do",
-            "boardSlotPosition": 40,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": true
-        },
-        {
-            "name": "DO1",
-            "sig_type": "do",
-            "boardSlotPosition": 41,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO2",
-            "sig_type": "do",
-            "boardSlotPosition": 42,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO3",
-            "sig_type": "do",
-            "boardSlotPosition": 43,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO4",
-            "sig_type": "do",
-            "boardSlotPosition": 44,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO5",
-            "sig_type": "do",
-            "boardSlotPosition": 45,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO6",
-            "sig_type": "do",
-            "boardSlotPosition": 46,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO7",
-            "sig_type": "do",
-            "boardSlotPosition": 47,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO8",
-            "sig_type": "do",
-            "boardSlotPosition": 48,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO9",
-            "sig_type": "do",
-            "boardSlotPosition": 49,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO10",
-            "sig_type": "do",
-            "boardSlotPosition": 50,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO11",
-            "sig_type": "do",
-            "boardSlotPosition": 51,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO12",
-            "sig_type": "do",
-            "boardSlotPosition": 52,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO13",
-            "sig_type": "do",
-            "boardSlotPosition": 53,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO14",
-            "sig_type": "do",
-            "boardSlotPosition": 54,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
-        },
-        {
-            "name": "DO15",
-            "sig_type": "do",
-            "boardSlotPosition": 55,
-            "engineeringUnits": null,
-            "engineeringUnitsLowAmount": 0,
-            "engineeringUnitsHighAmount": 1,
-            "showOnGUI": false
         },
         {
             "name": "DI0",

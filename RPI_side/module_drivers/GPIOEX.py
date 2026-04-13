@@ -18,7 +18,7 @@ class GPIOEX:
 
     def __init__(self, spidev, hw_addr=0):
         max_speed=1000000
-        self.resetPin = gpiozero.DigitalOutputDevice("GPIO26", initial_value =1 )
+        #self.resetPin = gpiozero.DigitalOutputDevice("GPIO26", initial_value =1 )
         self.spi = spidev
         self.spi.max_speed_hz = max_speed
         
@@ -35,12 +35,26 @@ class GPIOEX:
         self.resetPin.on()
         time.sleep(0.1)
         self.resetPin.close()
+    
+    def is_connected(self) -> bool:
+        """
+        Verify chip presence by writing a canary to IOCON (a safe, non-functional
+        register) and reading it back. Returns True only if the readback matches.
+        IOCON bit 5 (SEQOP) and bit 3 (HAEN) are safe to toggle for this purpose.
+        """
+        CANARY = 0x28  # bits 3 and 5 set — both are harmless config bits
+        self._write_reg(self.IOCON, CANARY)
+        readback = self._read_reg(self.IOCON)
+        # restore to default
+        self._write_reg(self.IOCON, 0x00)
+        return readback == CANARY
 
     def _write_reg(self, reg, value):
         self.spi.xfer2([self.opcode_write, reg, value])
 
     def _read_reg(self, reg):
         resp = self.spi.xfer2([self.opcode_read, reg, 0x00])
+
         return resp[2]
 
     def set_direction(self, mask):
@@ -48,7 +62,9 @@ class GPIOEX:
         self._write_reg(self.IODIR, mask)
 
     def enable_pullups(self, mask):
-        self._write_reg(self.GPPU, mask)
+        current = self._read_reg(self.GPPU)
+        current |= mask
+        self._write_reg(self.GPPU, current)
 
     def write_gpio(self, value):
         self._write_reg(self.GPIO, value)

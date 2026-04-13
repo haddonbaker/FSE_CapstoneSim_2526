@@ -1,0 +1,167 @@
+{
+    "runtime_settings": {
+        "ai_LPF_boxcar_length": 10,
+        "error_stack_max_len": 20,
+        "enable_verbose_logging": true,
+        "poll_buffer_period_ms": 500,
+        "socket_timeout_s": 3
+    },
+    "signals": [
+         
+        {
+            "name": "IVT",
+            "sig_type": "ai",
+            "boardSlotPosition": 48,
+            "engineeringUnits": "%",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 100.0,
+            "showOnGUI": true,
+            "offset_calib_constant": 0,
+            "slope_calib_constant": 1
+        },
+        {
+            "name": "AO16",
+            "sig_type": "ao",
+            "boardSlotPosition": 16,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO17",
+            "sig_type": "ao",
+            "boardSlotPosition": 17,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO18",
+            "sig_type": "ao",
+            "boardSlotPosition": 18,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO19",
+            "sig_type": "ao",
+            "boardSlotPosition": 19,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO20",
+            "sig_type": "ao",
+            "boardSlotPosition": 20,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO21",
+            "sig_type": "ao",
+            "boardSlotPosition": 21,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO22",
+            "sig_type": "ao",
+            "boardSlotPosition": 22,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO23",
+            "sig_type": "ao",
+            "boardSlotPosition": 23,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO24",
+            "sig_type": "ao",
+            "boardSlotPosition": 24,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": true
+        },
+        {
+            "name": "AO25",
+            "sig_type": "ao",
+            "boardSlotPosition": 25,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO26",
+            "sig_type": "ao",
+            "boardSlotPosition": 26,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO27",
+            "sig_type": "ao",
+            "boardSlotPosition": 27,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO28",
+            "sig_type": "ao",
+            "boardSlotPosition": 28,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO29",
+            "sig_type": "ao",
+            "boardSlotPosition": 29,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO30",
+            "sig_type": "ao",
+            "boardSlotPosition": 30,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        },
+        {
+            "name": "AO31",
+            "sig_type": "ao",
+            "boardSlotPosition": 31,
+            "engineeringUnits": "PSI",
+            "engineeringUnitsLowAmount": 0.0,
+            "engineeringUnitsHighAmount": 200.0,
+            "showOnGUI": false
+        }
+    ]
+    }

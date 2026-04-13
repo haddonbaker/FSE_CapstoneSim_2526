@@ -57,7 +57,7 @@ def cleanup_old_logs(logs_dir, days_threshold=15):
 if __name__ == "__main__":
     # determine paths
     current_dir = Path(__file__).resolve().parent
-    config_path = current_dir / "t_config.json"
+    config_path = current_dir / "default_config.json"
     logs_dir = current_dir / "logs"
 
     # cleanup old log files on startup
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     # socket controller configuration 
     # consider moving host/port into config.json
-    host = "192.168.137.10"
+    host = "192.168.137.11"
     port = 5000
 
     # use 3s default

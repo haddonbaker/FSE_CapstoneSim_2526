@@ -22,7 +22,7 @@ from .SN54LS138_Demux import SN54LS138_Demux
 
 class R_CLICK:
     
-    V_REF = 1.24 # voltage reference for the ADC chip
+    V_REF = 2.048 # voltage reference for the ADC chip
     R_SHUNT = 4.99 # ohms.  shunt resistor through which the signal current flows.
     BIT_RES = 12 # of ADC
     
@@ -34,7 +34,7 @@ class R_CLICK:
     def __init__(self, momIn : SN54LS138_Demux, card_controller : SN54LS138_Demux, board_slot : int, card_slot : int, spi: spidev.SpiDev):
         self.spi = spi
         self.momIn = momIn
-        self.board_slot = (board_slot % 5) + 1 # THIS IS THE WAY WE SELECT A CARD
+        self.board_slot = board_slot - 6  # THIS IS THE WAY WE SELECT A CARD - subtract 6 because demux 2 is wired to outputs y0,y1,y2
         self.card_controller = card_controller
         self.card_slot = card_slot # THIS IS THE WAY WE SELECT THE SLOT ON THE CARD
 
@@ -51,6 +51,9 @@ class R_CLICK:
         return (1000 * self.V_REF * counts)/(self.R_SHUNT * (2**self.BIT_RES-1) * 20) # see derivation in design notes
 
     def _twoBytes_to_mA(self, byteList: list[int]) -> float:
+        print("-"*100)
+        print(" got val: ", self._counts_to_mA(self._twoBytes_to_counts(byteList)))
+        print("-"*100)
         return self._counts_to_mA(self._twoBytes_to_counts(byteList))
     
     def read_mA(self) -> float:
@@ -71,7 +74,7 @@ class R_CLICK:
         # self.gpio_cs_pin.value = 1 # end transaction by pulling cs pin high
         
         return self._twoBytes_to_mA(rawResponse)
-    
+       
     def close(self) -> None:
         pass
     
