@@ -4,9 +4,9 @@ Description=Compressor simulator service. Will auto-run on boot. Authored by GCC
 After=network.target
 
 [Service]
-ExecStart=python3 /home/fsesim/fresh/RPI_side/mt_server_w_handlers.py
-User=fsesim
-Group=fsesim
+ExecStart=python3 /home/fsesim2/capstone_backup/fresh/RPI_side/mt_server_w_handlers.py
+User=fsesim2
+Group=fsesim2
 
 [Install]
 WantedBy=multi-user.target

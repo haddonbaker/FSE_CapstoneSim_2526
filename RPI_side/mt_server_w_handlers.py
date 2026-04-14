@@ -39,6 +39,33 @@ errorList = [] # most recent at end
 
 mutex = Lock()
 
+# --- connection LED helpers ---
+# The master makes a new TCP connection per packet, so the LED must not turn off
+# between packets.  Instead, arm a short timer on each disconnect; if no new
+# connection arrives before the timer fires, the LED turns off.
+_CONNECTION_TIMEOUT = 3.0  # seconds of silence before LED goes off
+_conn_timer = None
+_conn_timer_lock = Lock()
+
+def _connection_led_on():
+    """Call at the start of every handle_client: cancel any pending off-timer and turn LED on."""
+    global _conn_timer
+    with _conn_timer_lock:
+        if _conn_timer is not None:
+            _conn_timer.cancel()
+            _conn_timer = None
+    connection_led.on()
+
+def _connection_led_start_timeout():
+    """Call at the end of every handle_client: start the off-timer."""
+    global _conn_timer
+    with _conn_timer_lock:
+        if _conn_timer is not None:
+            _conn_timer.cancel()
+        _conn_timer = threading.Timer(_CONNECTION_TIMEOUT, connection_led.off)
+        _conn_timer.daemon = True
+        _conn_timer.start()
+
 def setup_spi(bus):
     spi = spidev.SpiDev()
     spi.open(bus, 0)
@@ -60,10 +87,10 @@ resetPin.on()
 
 
 my_module_manager = Module_Manager(spi_out = spi_out, spi_in = spi_in)
-indicator_gpio_str = "GPIO5"
-my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
-indicator_gpio_str = "GPIO6"
-my_module_manager.make_module_entry(logical_id=indicator_gpio_str, chType="in") # indicator light
+
+# indicator LEDs driven directly — not through module_manager
+connection_led = gpiozero.LED("GPIO5", active_high=True, initial_value=False)  # green
+power_led      = gpiozero.LED("GPIO6", active_high=True, initial_value=False)  # red
                 
 # --- functions ---
 
@@ -75,12 +102,15 @@ def handle_client(conn, addr, commandQueue):
 
     #print("[thread] new thread for handling the client has started")
 
+    _connection_led_on()  # on immediately; cancels any pending off-timer
+
     # recv message
     try:
         dpm = DataPacketModel.from_socket(conn)
     except ValueError as e:
         print(f"ValueError: unexpected error parsing socket data. Will close socket connection. Error is {e}")
         conn.close()
+        _connection_led_start_timeout()
         return
 
     # if dpm.msg_type == "d":
@@ -113,12 +143,15 @@ def handle_client(conn, addr, commandQueue):
     except Exception as e:
         print(f"[mt_server_w_handlers.handle_client] encountered the following error on send: {e}")
         conn.close()
+        _connection_led_start_timeout()
         return
 
     outQueue.clear() # reset because we've sent all of them to the master
     errorList.clear()
     
     conn.close() # this will flush out all data on output buffer
+
+    _connection_led_start_timeout()  # arm timer; LED stays on until 3 s of silence
 
 def _replace_double_quotes(s: str):
     # to satisfy json syntax (required when master parses error messages)
@@ -223,9 +256,8 @@ gp.start()
 all_threads.append(gp)
 
 
-# turn on the network status indicator
-# 2:blink rapidly, 1:solid on, 0:off
-_, _ = my_module_manager.execute_command(logical_id= indicator_gpio_str, chType = "in", val = 1)
+power_led.on()       # solid on for the lifetime of the process
+connection_led.off() # off until a client connects
 
 shouldStop = False
 
@@ -251,6 +283,10 @@ try:
 except KeyboardInterrupt:
     print("Stopped by Ctrl+C")
 finally:
+    power_led.off()
+    power_led.close()
+    connection_led.close()
+
     print("closing all modules and GPIOs...", end="")
     my_module_manager.release_all_modules()
     print("done")
