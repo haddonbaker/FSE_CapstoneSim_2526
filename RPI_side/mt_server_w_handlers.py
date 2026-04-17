@@ -72,7 +72,7 @@ def setup_spi(bus):
     if bus:
         spi.max_speed_hz = 10000
     else:
-        spi.max_speed_hz = 5000
+        spi.max_speed_hz = 1000000
     spi.mode = 0
     spi.bits_per_word = 8
     spi.threewire
