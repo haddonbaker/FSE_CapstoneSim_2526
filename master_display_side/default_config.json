@@ -224,13 +224,13 @@
             "showOnGUI": false
         },
         {
-            "name": "DPTT",
+            "name": "AO24",
             "sig_type": "ao",
             "boardSlotPosition": 24,
             "engineeringUnits": "PSI",
             "engineeringUnitsLowAmount": 0.0,
             "engineeringUnitsHighAmount": 200.0,
-            "showOnGUI": true
+            "showOnGUI": false
         },
         {
             "name": "AO25",
